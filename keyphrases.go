@@ -5,14 +5,17 @@ package keyphrases
  */
 import (
 	"errors"
+	"fmt"
+	"os"
 
 	"github.com/gelembjuk/keyphrases/languages"
 )
 
 type TextPhrases struct {
-	text     string
-	Language string
-	langobj  languages.LangClass
+	text       string
+	Language   string
+	NewsSource bool
+	langobj    languages.LangClass
 }
 
 func (obj *TextPhrases) Init() error {
@@ -35,10 +38,16 @@ func (obj *TextPhrases) Analyse(text string) []string {
 	//phrases := []string{}
 
 	// 1. Split a text for sentences
-	sentences, _ := obj.splitTextForSentences(text)
 	// 2. Normalize sentences
+	sentences, _ := obj.splitTextForSentences(text)
 	// 3. Get words normalized
+	words, _ := obj.splitSentencesForWords(sentences)
 	// 4. Get phrases from sentences using words
+
+	for k, v := range words {
+		fmt.Printf("%s , %d\n", k, v)
+	}
+	os.Exit(0)
 
 	return sentences
 }

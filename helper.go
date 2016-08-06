@@ -30,3 +30,17 @@ func (obj *TextPhrases) cleanTextAfterHTML(text string) (string, error) {
 
 	return text, nil
 }
+
+func (obj *TextPhrases) compareSlices(s1 []string, s2 []string) bool {
+	if len(s1) != len(s2) {
+		return false
+	}
+
+	for i, v := range s1 {
+		if v != s2[i] {
+			return false
+		}
+	}
+
+	return true
+}
