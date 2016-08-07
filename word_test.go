@@ -1,11 +1,14 @@
 package keyphrases
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+
+	"github.com/gelembjuk/keyphrases/helper"
+)
 
 func TestSplitSentenceForWords(t *testing.T) {
-	analyser := TextPhrases{Language: "english", NewsSource: true}
-
-	analyser.Init()
+	analyser := getAnalyserForTesting()
 
 	tests := map[string][]string{}
 
@@ -13,8 +16,36 @@ func TestSplitSentenceForWords(t *testing.T) {
 
 	for testtext, finalwords := range tests {
 
-		if words, _ := analyser.splitSentenceForWords(testtext); !analyser.compareSlices(words, finalwords) {
+		if words, _ := analyser.splitSentenceForWords(testtext); !helper.CompareSlices(words, finalwords) {
 			t.Fatalf("For text %s, got %s, expected %s.", testtext, words, finalwords)
 		}
 	}
+}
+
+func TestJoinSimilarWords(t *testing.T) {
+	analyser := getAnalyserForTesting()
+
+	words := map[string]int{
+		"testword1": 2,
+		"US":        3,
+		"USA":       4,
+		"testword2": 3,
+		"xxx":       2,
+		"testword3": 2,
+		"zzz":       4,
+	}
+
+	result := map[string]int{
+		"USA":       7,
+		"testword1": 7,
+		"xxx":       2,
+		"zzz":       4,
+	}
+
+	analyser.joinSimilarWords(words)
+
+	if !reflect.DeepEqual(result, words) {
+		t.Fatalf("List not equel, got %s, expected %s.", words, result)
+	}
+
 }

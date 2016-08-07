@@ -1,5 +1,10 @@
 package languages
 
+import (
+	//	"strings"
+	"unicode"
+)
+
 type LangClass interface {
 	TruncateCommonPhrase(phrase string) string
 	TruncateCompanyName(phrase string) string
@@ -10,6 +15,7 @@ type LangClass interface {
 	CleanAndNormaliseSentence(sentence string) (string, error)
 	IsWord(word string) bool
 	RemoveCommonWords(words map[string]int) bool
+	IsSimilarWord(word1 string, word2 string) int8
 }
 
 type Language struct {
@@ -23,4 +29,14 @@ func stringInSlice(str string, slice []string) bool {
 		}
 	}
 	return false
+}
+
+func upperCaseFirstLetter(str string) string {
+	if len(str) < 1 {
+		return str
+	}
+
+	out := []rune(str)
+	out[0] = unicode.ToUpper(out[0])
+	return string(out)
 }

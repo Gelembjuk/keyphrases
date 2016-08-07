@@ -3,6 +3,7 @@ package keyphrases
 import (
 	"regexp"
 
+	"github.com/gelembjuk/keyphrases/helper"
 	"gopkg.in/neurosnap/sentences.v1"
 	"gopkg.in/neurosnap/sentences.v1/data"
 )
@@ -29,7 +30,7 @@ func (obj *TextPhrases) splitTextForSentences(text string) ([]string, error) {
 	// create the default sentence tokenizer
 	tokenizer := sentences.NewSentenceTokenizer(training)
 
-	text, _ = obj.cleanTextAfterHTML(text)
+	text, _ = helper.CleanTextAfterHTML(text)
 
 	if obj.NewsSource {
 		// this text is from news sources. It can have specific news format

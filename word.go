@@ -2,6 +2,7 @@ package keyphrases
 
 import (
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -23,6 +24,8 @@ func (obj *TextPhrases) splitSentencesForWords(sentences []string) (map[string]i
 	}
 
 	obj.langobj.RemoveCommonWords(allwords)
+
+	obj.joinSimilarWords(allwords)
 
 	return allwords, nil
 }
@@ -53,4 +56,58 @@ func (obj *TextPhrases) splitSentenceForWords(sentence string) ([]string, error)
 	}
 
 	return words, nil
+}
+
+func (obj *TextPhrases) joinSimilarWords(words map[string]int) bool {
+
+	wordslist := []string{}
+
+	for word, _ := range words {
+		wordslist = append(wordslist, word)
+	}
+
+	sort.Strings(wordslist)
+
+	remove := [][]string{}
+
+	checkIfRemoved := func(word string) bool {
+		for _, w := range remove {
+			if w[0] == word || w[1] == word {
+				return true
+			}
+		}
+		return false
+	}
+
+	for i, word1 := range wordslist {
+
+		if checkIfRemoved(word1) {
+			continue
+		}
+
+		for j, word2 := range wordslist {
+			if i == j {
+				continue
+			}
+
+			if checkIfRemoved(word2) {
+				continue
+			}
+			similar := obj.langobj.IsSimilarWord(word1, word2)
+
+			if similar == 1 {
+				remove = append(remove, []string{word2, word1})
+			} else if similar == -1 {
+				remove = append(remove, []string{word1, word2})
+				continue
+			}
+		}
+	}
+
+	for _, w := range remove {
+		words[w[1]] += words[w[0]]
+		delete(words, w[0])
+	}
+
+	return true
 }

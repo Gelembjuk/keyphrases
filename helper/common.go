@@ -1,11 +1,11 @@
-package keyphrases
+package helper
 
 import (
 	"regexp"
 	"strings"
 )
 
-func (obj *TextPhrases) cleanTextAfterHTML(text string) (string, error) {
+func CleanTextAfterHTML(text string) (string, error) {
 	toreplace := map[string]string{
 		"\r":      "",
 		"&nbsp;":  " ",
@@ -31,7 +31,7 @@ func (obj *TextPhrases) cleanTextAfterHTML(text string) (string, error) {
 	return text, nil
 }
 
-func (obj *TextPhrases) compareSlices(s1 []string, s2 []string) bool {
+func CompareSlices(s1 []string, s2 []string) bool {
 	if len(s1) != len(s2) {
 		return false
 	}
@@ -43,4 +43,13 @@ func (obj *TextPhrases) compareSlices(s1 []string, s2 []string) bool {
 	}
 
 	return true
+}
+
+func StringInSlice(str string, slice []string) bool {
+	for _, s := range slice {
+		if s == str {
+			return true
+		}
+	}
+	return false
 }

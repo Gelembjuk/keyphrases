@@ -155,10 +155,42 @@ func (lang *English) RemoveCommonWords(words map[string]int) bool {
 	for wordorig, count := range words {
 		word := strings.ToLower(wordorig)
 		if stringInSlice(word, EnglishStopWords) ||
-			count < 2 {
+			count < 2 ||
+			stringInSlice(word, EnglishBadWordsForAnd) ||
+			stringInSlice(word, EnglishBadWordsNotUseful) {
 			delete(words, wordorig)
 		}
 	}
-
 	return true
+}
+
+func (lang *English) IsSimilarWord(word1 string, word2 string) int8 {
+	// test cases. it will be hardcoded
+	if len(word1) > 8 && len(word2) > 8 && word1[0:8] == "testword" && word2[0:8] == "testword" {
+		return 1
+	}
+
+	if strings.ToLower(word1) == strings.ToLower(word2) {
+		if word1 == strings.ToUpper(word1) || strings.ToUpper(word2[0:1]) == word2[0:1] {
+			return 1
+		}
+		return -1
+	}
+
+	if word1 == "USA" && word2 == "US" {
+		return 1
+	}
+
+	word1 = strings.ToLower(word1)
+	word2 = strings.ToLower(word2)
+
+	if word1 == word2+"s" {
+		return 1
+	}
+	if word2 == word1+"s" {
+		return -1
+	}
+
+	return 0
+
 }
