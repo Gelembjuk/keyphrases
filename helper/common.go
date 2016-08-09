@@ -3,6 +3,7 @@ package helper
 import (
 	"regexp"
 	"strings"
+	"unicode"
 )
 
 func CleanTextAfterHTML(text string) (string, error) {
@@ -52,4 +53,14 @@ func StringInSlice(str string, slice []string) bool {
 		}
 	}
 	return false
+}
+
+func UpperCaseFirstLetter(str string) string {
+	if len(str) < 1 {
+		return str
+	}
+
+	out := []rune(str)
+	out[0] = unicode.ToUpper(out[0])
+	return string(out)
 }

@@ -45,8 +45,10 @@ func (obj *TextPhrases) GetKeyPhrases(text string) []string {
 	words, _ := obj.splitSentencesForWords(sentences)
 	// 4. Get phrases from sentences using words
 
-	for k, v := range words {
-		fmt.Printf("%s , %d\n", k, v)
+	phraseslist, _ := obj.getPhrases(sentences, words)
+
+	for _, p := range phraseslist {
+		fmt.Printf("%s\n", p)
 	}
 	os.Exit(0)
 
@@ -56,14 +58,9 @@ func (obj *TextPhrases) GetKeyPhrases(text string) []string {
 func (obj *TextPhrases) GetKeyWords(text string) []string {
 	obj.text = text
 
-	//phrases := []string{}
-
-	// 1. Split a text for sentences
-	// 2. Normalize sentences
 	sentences, _ := obj.splitTextForSentences(text)
-	// 3. Get words normalized
+
 	wordshash, _ := obj.splitSentencesForWords(sentences)
-	// 4. Get phrases from sentences using words
 
 	words := helper.KeysSortedByValuesReverse(wordshash)
 

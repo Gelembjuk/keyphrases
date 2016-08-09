@@ -30,6 +30,12 @@ func (obj *TextPhrases) splitSentencesForWords(sentences []string) (map[string]i
 	return allwords, nil
 }
 
+func (obj *TextPhrases) wordsCount(sentence string) uint {
+	words, _ := obj.splitSentenceForWords(sentence)
+
+	return uint(len(words))
+}
+
 func (obj *TextPhrases) splitSentenceForWords(sentence string) ([]string, error) {
 	words := []string{}
 

@@ -47,3 +47,31 @@ func KeysSortedByValuesReverse(mymap map[string]int) []string {
 
 	return pairListToSlice(pl)
 }
+
+func KeyWithBiggestValue(mymap map[string]int) string {
+	key := ""
+	value := 0
+
+	for k, v := range mymap {
+		if v > value {
+			value = v
+			key = k
+		}
+	}
+
+	return key
+}
+
+func GetBiggestValueInMap(mymap map[string]int) int {
+
+	value := 0
+
+	for _, v := range mymap {
+		if v > value {
+			value = v
+
+		}
+	}
+
+	return value
+}

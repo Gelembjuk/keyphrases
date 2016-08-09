@@ -3,6 +3,8 @@ package languages
 import (
 	"regexp"
 	"strings"
+
+	"github.com/gelembjuk/keyphrases/helper"
 )
 
 var EnglishStopWords []string
@@ -38,7 +40,7 @@ func init() {
 		"out", "on", "off", "over", "under", "again", "further", "then", "once", "here", "there", "when",
 		"where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such",
 		"no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "de", "will", "of", "without"}
-	EnglishBadWordsForAnd = []string{"have", "has", "had", "can", "up", "could", "may", "per", "said", "says"}
+	EnglishBadWordsForAnd = []string{"have", "has", "had", "can", "up", "could", "may", "per", "said", "says", "yet"}
 	EnglishBadWordsNotUseful = []string{"inc", "said"}
 	EnglishAdverbsOfTime = []string{"after", "already", "during", "finally", "just", "last", "later", "next", "now", "recently", "soon", "then", "tomorrow", "when", "while", "yesterday", "year", "week", "day", "month", "hour", "quarter"}
 	EnglishNounsOfTime = []string{"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"}
@@ -154,10 +156,10 @@ func (lang *English) RemoveCommonWords(words map[string]int) bool {
 
 	for wordorig, count := range words {
 		word := strings.ToLower(wordorig)
-		if stringInSlice(word, EnglishStopWords) ||
+		if helper.StringInSlice(word, EnglishStopWords) ||
 			count < 2 ||
-			stringInSlice(word, EnglishBadWordsForAnd) ||
-			stringInSlice(word, EnglishBadWordsNotUseful) {
+			helper.StringInSlice(word, EnglishBadWordsForAnd) ||
+			helper.StringInSlice(word, EnglishBadWordsNotUseful) {
 			delete(words, wordorig)
 		}
 	}
@@ -193,4 +195,61 @@ func (lang *English) IsSimilarWord(word1 string, word2 string) int8 {
 
 	return 0
 
+}
+
+func (lang *English) IsNotUsefulWord(word string) bool {
+	if helper.StringInSlice(word, EnglishStopWords) {
+		return true
+	}
+	if helper.StringInSlice(word, EnglishBadWordsForAnd) {
+		return true
+	}
+	if helper.StringInSlice(word, EnglishBadWordsNotUseful) {
+		return true
+	}
+	return false
+}
+
+func (lang *English) IsPhraseSubphrase(phrase1 string, phrase2 string) int8 {
+	if phrase1 == "the "+phrase2 {
+		return 1
+	}
+	if phrase2 == "the "+phrase1 {
+		return -1
+	}
+	if phrase1 == phrase2+" inc" {
+		return 1
+	}
+	if phrase2 == phrase1+" inc" {
+		return -1
+	}
+	if phrase1 == phrase2+"s" {
+		return 1
+	}
+	if phrase2 == phrase1+"s" {
+		return -1
+	}
+	return 0
+}
+func (lang *English) IsWordModInPhrase(phrase, word string) bool {
+	l := len(word)
+
+	if l < 2 {
+		return false
+	}
+
+	pattern := " " + word + "s? "
+
+	if word[l-2:l-1] == "es" {
+		pattern = " " + word + "(es)? "
+	}
+
+	if t, _ := regexp.MatchString(pattern, " "+phrase+" "); t {
+		return true
+	}
+	return false
+}
+
+func (lang *English) GetTypeOfWord(word string, prevword string, nextword string) string {
+	return "n"
 }
