@@ -91,7 +91,8 @@ func trimCommonWords(phrase string, mode int8) string {
 }
 
 func getBasicPhrasesHash(sentences []string, allwords map[string]int) (map[string]int, error) {
-
+	fmt.Println(sentences)
+	fmt.Println(allwords)
 	// keep a previous words history in  phrase
 	allwordsh := map[string][]string{}
 
@@ -109,27 +110,27 @@ func getBasicPhrasesHash(sentences []string, allwords map[string]int) (map[strin
 			wordaddedtosomephrase := 0
 			prevwordaddedtosomephrase := 0
 
-			fmt.Printf("W: %s\n", word)
+			//fmt.Printf("W: %s\n", word)
 
 			if len(prevphrases) > 0 {
 
 				for i := 0; i < len(prevphrases); i++ {
 					prevword := prevphrases[i]
 
-					fmt.Printf(" PW: %s\n", prevword)
+					//fmt.Printf(" PW: %s\n", prevword)
 
 					addedword := 0
 
 					if _, ok := allwordsh[prevword]; !ok {
 						//add this for all secuences
-						fmt.Printf("  W new Slice: %s\n", word)
+						//fmt.Printf("  W new Slice: %s\n", word)
 						allwordsh[prevword] = []string{word}
 					} else {
 						if helper.StringInSlice(word, allwordsh[prevword]) {
-							fmt.Printf("  W IN Slice: %s\n", word)
+							//fmt.Printf("  W IN Slice: %s\n", word)
 							//this is phrase and it occured 2 times now
 							// it means in some previous sentence this 2 words also were one after other
-
+							fmt.Printf("S: %s - %s \t\t %s\n", word, prevword, pphrases[i])
 							// build possible phrase
 							if pphrases[i] == "" {
 								pphrases[i] = prevword + " " + word
@@ -139,7 +140,7 @@ func getBasicPhrasesHash(sentences []string, allwords map[string]int) (map[strin
 							}
 							addedword = 1
 						} else {
-							fmt.Printf("  W add to S: %s\n", word)
+							//fmt.Printf("  W add to S: %s\n", word)
 							//add to array
 							allwordsh[prevword] = append(allwordsh[prevword], word)
 						}
@@ -151,7 +152,7 @@ func getBasicPhrasesHash(sentences []string, allwords map[string]int) (map[strin
 
 						if words.WordsCount(pphrases[i]) > 1 {
 							//this is the end of the phrase
-							fmt.Printf(" P: %s\n", pphrases[i])
+							//fmt.Printf(" P: %s\n", pphrases[i])
 							if _, ok := phrases[pphrases[i]]; ok {
 								phrases[pphrases[i]]++
 							} else {
