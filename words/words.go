@@ -1,17 +1,29 @@
-package keyphrases
+package words
 
 import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/gelembjuk/keyphrases/languages"
 )
 
-func (obj *TextPhrases) splitSentencesForWords(sentences []string) (map[string]int, error) {
+var langobj languages.LangClass
+
+func SetLangObject(lang languages.LangClass) {
+	langobj = lang
+}
+
+func SetLanguage(lang string) {
+	langobj, _ = languages.GetLangObject(lang)
+}
+
+func SplitSentencesForWords(sentences []string) (map[string]int, error) {
 
 	allwords := map[string]int{}
 
 	for _, sentence := range sentences {
-		words, _ := obj.splitSentenceForWords(sentence)
+		words, _ := SplitSentenceForWords(sentence)
 
 		for _, word := range words {
 			if _, ok := allwords[word]; ok {
@@ -23,20 +35,21 @@ func (obj *TextPhrases) splitSentencesForWords(sentences []string) (map[string]i
 
 	}
 
-	obj.langobj.RemoveCommonWords(allwords)
+	langobj.RemoveCommonWords(allwords)
 
-	obj.joinSimilarWords(allwords)
+	joinSimilarWords(allwords)
 
 	return allwords, nil
 }
 
-func (obj *TextPhrases) wordsCount(sentence string) uint {
-	words, _ := obj.splitSentenceForWords(sentence)
+func WordsCount(sentence string) uint {
+	words, _ := SplitSentenceForWords(sentence)
 
 	return uint(len(words))
 }
 
-func (obj *TextPhrases) splitSentenceForWords(sentence string) ([]string, error) {
+func SplitSentenceForWords(sentence string) ([]string, error) {
+
 	words := []string{}
 
 	replace := [][]string{
@@ -56,7 +69,7 @@ func (obj *TextPhrases) splitSentenceForWords(sentence string) ([]string, error)
 	twords := strings.Split(sentence, " ")
 
 	for _, w := range twords {
-		if obj.langobj.IsWord(w) {
+		if langobj.IsWord(w) {
 			words = append(words, w)
 		}
 	}
@@ -64,7 +77,7 @@ func (obj *TextPhrases) splitSentenceForWords(sentence string) ([]string, error)
 	return words, nil
 }
 
-func (obj *TextPhrases) joinSimilarWords(words map[string]int) bool {
+func joinSimilarWords(words map[string]int) bool {
 
 	wordslist := []string{}
 
@@ -99,7 +112,7 @@ func (obj *TextPhrases) joinSimilarWords(words map[string]int) bool {
 			if checkIfRemoved(word2) {
 				continue
 			}
-			similar := obj.langobj.IsSimilarWord(word1, word2)
+			similar := langobj.IsSimilarWord(word1, word2)
 
 			if similar == 1 {
 				remove = append(remove, []string{word2, word1})

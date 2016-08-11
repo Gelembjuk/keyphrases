@@ -4,12 +4,14 @@ package keyphrases
 *
  */
 import (
-	"errors"
 	"fmt"
 	"os"
 
 	"github.com/gelembjuk/keyphrases/helper"
 	"github.com/gelembjuk/keyphrases/languages"
+	"github.com/gelembjuk/keyphrases/phrases"
+	"github.com/gelembjuk/keyphrases/sentences"
+	"github.com/gelembjuk/keyphrases/words"
 )
 
 type TextPhrases struct {
@@ -20,17 +22,16 @@ type TextPhrases struct {
 }
 
 func (obj *TextPhrases) Init() error {
-	if obj.Language == "" {
-		obj.Language = "english"
+	var err error
+	obj.langobj, err = languages.GetLangObject(obj.Language)
+
+	if err == nil {
+		words.SetLangObject(obj.langobj)
+		sentences.SetLangObject(obj.langobj)
+		phrases.SetLangObject(obj.langobj)
 	}
 
-	if obj.Language == "english" {
-		obj.langobj = new(languages.English)
-	} else {
-		return errors.New("Unknown Language")
-	}
-
-	return nil
+	return err
 }
 
 func (obj *TextPhrases) GetKeyPhrases(text string) []string {
@@ -40,37 +41,43 @@ func (obj *TextPhrases) GetKeyPhrases(text string) []string {
 
 	// 1. Split a text for sentences
 	// 2. Normalize sentences
-	sentences, _ := obj.splitTextForSentences(text)
+
+	var sentenceslist []string
+
+	if obj.NewsSource {
+		sentenceslist, _ = sentences.SplitTextForSentencesFromNews(text)
+	} else {
+		sentenceslist, _ = sentences.SplitTextForSentences(text)
+	}
+
 	// 3. Get words normalized
-	words, _ := obj.splitSentencesForWords(sentences)
+	wordslist, _ := words.SplitSentencesForWords(sentenceslist)
 	// 4. Get phrases from sentences using words
 
-	phraseslist, _ := obj.getPhrases(sentences, words)
+	phraseslist, _ := phrases.GetPhrases(sentenceslist, wordslist)
 
 	for _, p := range phraseslist {
 		fmt.Printf("%s\n", p)
 	}
 	os.Exit(0)
 
-	return sentences
+	return sentenceslist
 }
 
 func (obj *TextPhrases) GetKeyWords(text string) []string {
 	obj.text = text
 
-	sentences, _ := obj.splitTextForSentences(text)
+	var sentenceslist []string
 
-	wordshash, _ := obj.splitSentencesForWords(sentences)
+	if obj.NewsSource {
+		sentenceslist, _ = sentences.SplitTextForSentencesFromNews(text)
+	} else {
+		sentenceslist, _ = sentences.SplitTextForSentences(text)
+	}
+
+	wordshash, _ := words.SplitSentencesForWords(sentenceslist)
 
 	words := helper.KeysSortedByValuesReverse(wordshash)
 
 	return words
-}
-
-func getAnalyserForTesting() TextPhrases {
-	analyser := TextPhrases{Language: "english", NewsSource: true}
-
-	analyser.Init()
-
-	return analyser
 }

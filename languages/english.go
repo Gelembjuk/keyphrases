@@ -47,6 +47,10 @@ func init() {
 
 }
 
+func (lang English) GetName() string {
+	return "english"
+}
+
 func (lang English) TruncateCommonPhrase(phrase string) string {
 	return phrase
 }

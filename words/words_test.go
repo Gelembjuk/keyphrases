@@ -1,4 +1,4 @@
-package keyphrases
+package words
 
 import (
 	"reflect"
@@ -8,7 +8,7 @@ import (
 )
 
 func TestSplitSentenceForWords(t *testing.T) {
-	analyser := getAnalyserForTesting()
+	SetLanguage("english")
 
 	tests := map[string][]string{}
 
@@ -16,14 +16,14 @@ func TestSplitSentenceForWords(t *testing.T) {
 
 	for testtext, finalwords := range tests {
 
-		if words, _ := analyser.splitSentenceForWords(testtext); !helper.CompareSlices(words, finalwords) {
+		if words, _ := SplitSentenceForWords(testtext); !helper.CompareSlices(words, finalwords) {
 			t.Fatalf("For text %s, got %s, expected %s.", testtext, words, finalwords)
 		}
 	}
 }
 
 func TestJoinSimilarWords(t *testing.T) {
-	analyser := getAnalyserForTesting()
+	SetLanguage("english")
 
 	words := map[string]int{
 		"testword1": 2,
@@ -42,7 +42,7 @@ func TestJoinSimilarWords(t *testing.T) {
 		"zzz":       4,
 	}
 
-	analyser.joinSimilarWords(words)
+	joinSimilarWords(words)
 
 	if !reflect.DeepEqual(result, words) {
 		t.Fatalf("List not equel, got %s, expected %s.", words, result)

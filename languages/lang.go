@@ -1,6 +1,11 @@
 package languages
 
+import (
+	"errors"
+)
+
 type LangClass interface {
+	GetName() string
 	TruncateCommonPhrase(phrase string) string
 	TruncateCompanyName(phrase string) string
 	CheckIfIsCompanyName(phrase string) bool
@@ -19,4 +24,17 @@ type LangClass interface {
 
 type Language struct {
 	Name string
+}
+
+func GetLangObject(language string) (LangClass, error) {
+	if language == "" {
+		language = "english"
+	}
+
+	if language == "english" || language == "en" {
+		return new(English), nil
+	}
+
+	return nil, errors.New("Unknown Language")
+
 }

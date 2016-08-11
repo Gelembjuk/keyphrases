@@ -1,18 +1,38 @@
-package keyphrases
+package sentences
 
 import (
 	"regexp"
 
 	"github.com/gelembjuk/keyphrases/helper"
+	"github.com/gelembjuk/keyphrases/languages"
 	"gopkg.in/neurosnap/sentences.v1"
 	"gopkg.in/neurosnap/sentences.v1/data"
 )
 
-func (obj *TextPhrases) splitTextForSentences(text string) ([]string, error) {
+var langobj languages.LangClass
+
+func SetLangObject(lang languages.LangClass) {
+	langobj = lang
+}
+
+func SetLanguage(lang string) {
+	langobj, _ = languages.GetLangObject(lang)
+}
+
+func SplitTextForSentencesFromNews(text string) ([]string, error) {
+	// this text is from news sources. It can have specific news format
+	// clean a text from standard news message formatting , and specific language
+
+	text, _ = helper.CleanTextAfterHTML(text)
+
+	return SplitTextForSentences(text)
+}
+
+func SplitTextForSentences(text string) ([]string, error) {
 	// prepare tokenizer
 	sentenceslist := []string{}
 
-	langfile := "data/" + obj.Language + ".json"
+	langfile := "data/" + langobj.GetName() + ".json"
 
 	b, err := data.Asset(langfile)
 
@@ -30,14 +50,6 @@ func (obj *TextPhrases) splitTextForSentences(text string) ([]string, error) {
 	// create the default sentence tokenizer
 	tokenizer := sentences.NewSentenceTokenizer(training)
 
-	text, _ = helper.CleanTextAfterHTML(text)
-
-	if obj.NewsSource {
-		// this text is from news sources. It can have specific news format
-		// clean a text from standard news message formatting , and specific language
-		text, _, _ = obj.langobj.CleanNewsMessage(text)
-	}
-
 	sentencesobjs := tokenizer.Tokenize(text)
 
 	for _, s := range sentencesobjs {
@@ -48,7 +60,7 @@ func (obj *TextPhrases) splitTextForSentences(text string) ([]string, error) {
 			continue
 		}
 
-		sentence, _ = obj.cleanAndNormaliseSentence(sentence)
+		sentence, _ = cleanAndNormaliseSentence(sentence)
 
 		sentenceslist = append(sentenceslist, sentence)
 	}
@@ -56,9 +68,9 @@ func (obj *TextPhrases) splitTextForSentences(text string) ([]string, error) {
 	return sentenceslist, nil
 }
 
-func (obj *TextPhrases) cleanAndNormaliseSentence(sentence string) (string, error) {
+func cleanAndNormaliseSentence(sentence string) (string, error) {
 
-	sentence, _ = obj.langobj.CleanAndNormaliseSentence(sentence)
+	sentence, _ = langobj.CleanAndNormaliseSentence(sentence)
 
 	replace := [][]string{
 		{"[\\[\\]}{]", ""},

@@ -1,17 +1,30 @@
-package keyphrases
+package phrases
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/gelembjuk/keyphrases/helper"
+	"github.com/gelembjuk/keyphrases/languages"
+	"github.com/gelembjuk/keyphrases/words"
 )
 
 type Phrase struct {
 	Phrase   string
 	Synonims []string
 	Count    int
+}
+
+var langobj languages.LangClass
+
+func SetLangObject(lang languages.LangClass) {
+	langobj = lang
+}
+
+func SetLanguage(lang string) {
+	langobj, _ = languages.GetLangObject(lang)
 }
 
 func (p Phrase) String() string {
@@ -26,18 +39,18 @@ func (p Phrase) String() string {
 	return result
 }
 
-func (obj *TextPhrases) getPhrases(sentences []string, allwords map[string]int) ([]Phrase, error) {
-	phrases, _ := obj.getBasicPhrasesHash(sentences, allwords)
+func GetPhrases(sentences []string, allwords map[string]int) ([]Phrase, error) {
+	phrases, _ := getBasicPhrasesHash(sentences, allwords)
 
-	obj.removeCommonPhrases(phrases)
+	removeCommonPhrases(phrases)
 
-	synonims := obj.findSinonimPhrases(phrases)
+	synonims := findSinonimPhrases(phrases)
 
-	obj.findWordsAsPhrases(phrases, allwords)
+	findWordsAsPhrases(phrases, allwords)
 
 	phraseslist := []Phrase{}
 
-	finalphrases := obj.finalFilterPhrases(phrases, 12)
+	finalphrases := finalFilterPhrases(phrases, 12)
 
 	for _, phrase := range finalphrases {
 
@@ -51,61 +64,73 @@ func (obj *TextPhrases) getPhrases(sentences []string, allwords map[string]int) 
 	return phraseslist, nil
 }
 
-func (obj *TextPhrases) getPhrasesShort(sentences []string, allwords map[string]int) ([]string, error) {
-	phrases, _ := obj.getBasicPhrasesHash(sentences, allwords)
+func GetPhrasesShort(sentences []string, allwords map[string]int) ([]string, error) {
+	phrases, _ := getBasicPhrasesHash(sentences, allwords)
 
-	obj.removeCommonPhrases(phrases)
+	removeCommonPhrases(phrases)
 
-	obj.findWordsAsPhrases(phrases, allwords)
+	findWordsAsPhrases(phrases, allwords)
 
-	finalphrases := obj.finalFilterPhrases(phrases, 12)
+	finalphrases := finalFilterPhrases(phrases, 12)
 
 	return finalphrases, nil
 }
 
-func (obj *TextPhrases) trimCommonWords(phrase string, mode int8) string {
+func trimCommonWords(phrase string, mode int8) string {
 
-	words, _ := obj.splitSentenceForWords(phrase)
+	wordslist, _ := words.SplitSentenceForWords(phrase)
 
-	for len(words) > 0 && obj.langobj.IsNotUsefulWord(words[0]) {
-		words = words[1:len(words)]
+	for len(wordslist) > 0 && langobj.IsNotUsefulWord(wordslist[0]) {
+		wordslist = wordslist[1:len(wordslist)]
 	}
 
-	for len(words) > 0 && obj.langobj.IsNotUsefulWord(words[len(words)-1]) {
-		words = words[0 : len(words)-1]
+	for len(wordslist) > 0 && langobj.IsNotUsefulWord(wordslist[len(wordslist)-1]) {
+		wordslist = wordslist[0 : len(wordslist)-1]
 	}
-	return strings.Join(words, " ")
+	return strings.Join(wordslist, " ")
 }
 
-func (obj *TextPhrases) getBasicPhrasesHash(sentences []string, allwords map[string]int) (map[string]int, error) {
+func getBasicPhrasesHash(sentences []string, allwords map[string]int) (map[string]int, error) {
 
+	// keep a previous words history in  phrase
 	allwordsh := map[string][]string{}
+
+	// result list of phrases
 	phrases := map[string]int{}
 
 	for _, sentence := range sentences {
-		words, _ := obj.splitSentenceForWords(sentence)
+		wordslist, _ := words.SplitSentenceForWords(sentence)
 
 		prevphrases := []string{}
 
 		pphrases := []string{}
 
-		for _, word := range words {
+		for _, word := range wordslist {
 			wordaddedtosomephrase := 0
 			prevwordaddedtosomephrase := 0
+
+			fmt.Printf("W: %s\n", word)
 
 			if len(prevphrases) > 0 {
 
 				for i := 0; i < len(prevphrases); i++ {
 					prevword := prevphrases[i]
 
+					fmt.Printf(" PW: %s\n", prevword)
+
 					addedword := 0
 
 					if _, ok := allwordsh[prevword]; !ok {
 						//add this for all secuences
+						fmt.Printf("  W new Slice: %s\n", word)
 						allwordsh[prevword] = []string{word}
 					} else {
 						if helper.StringInSlice(word, allwordsh[prevword]) {
+							fmt.Printf("  W IN Slice: %s\n", word)
 							//this is phrase and it occured 2 times now
+							// it means in some previous sentence this 2 words also were one after other
+
+							// build possible phrase
 							if pphrases[i] == "" {
 								pphrases[i] = prevword + " " + word
 								prevwordaddedtosomephrase = 1
@@ -114,17 +139,19 @@ func (obj *TextPhrases) getBasicPhrasesHash(sentences []string, allwords map[str
 							}
 							addedword = 1
 						} else {
+							fmt.Printf("  W add to S: %s\n", word)
 							//add to array
 							allwordsh[prevword] = append(allwordsh[prevword], word)
 						}
 					}
 					if addedword == 0 && pphrases[i] != "" {
+						// phrase building complete. This is final step
 						// simplify phrase
-						pphrases[i] = obj.trimCommonWords(pphrases[i], 0)
+						pphrases[i] = trimCommonWords(pphrases[i], 0)
 
-						if obj.wordsCount(pphrases[i]) > 1 {
+						if words.WordsCount(pphrases[i]) > 1 {
 							//this is the end of the phrase
-
+							fmt.Printf(" P: %s\n", pphrases[i])
 							if _, ok := phrases[pphrases[i]]; ok {
 								phrases[pphrases[i]]++
 							} else {
@@ -160,9 +187,9 @@ func (obj *TextPhrases) getBasicPhrasesHash(sentences []string, allwords map[str
 
 		for _, phrase := range pphrases {
 			if phrase != "" {
-				phrase = obj.trimCommonWords(phrase, 1)
+				phrase = trimCommonWords(phrase, 1)
 				//this is the end of the phrase
-				if obj.wordsCount(phrase) > 1 && obj.wordsCount(phrase) <= 6 {
+				if words.WordsCount(phrase) > 1 && words.WordsCount(phrase) <= 6 {
 					if _, ok := phrases[phrase]; ok {
 						phrases[phrase]++
 					} else {
@@ -175,33 +202,16 @@ func (obj *TextPhrases) getBasicPhrasesHash(sentences []string, allwords map[str
 	}
 
 	return phrases, nil
-	/*
 
-
-		my @phraseslist=();
-
-		foreach my $c(reverse sort {$phrases{$a} <=> $phrases{$b} } keys %phrases){
-			next if(!defined $c || $c=~/^\s+$/ || $c eq '');
-			my $ptype=$self->getTypeOfPhrase($c);
-			if($ptype eq 'n' || $ptype eq 'r' || $ptype eq 's' || $ptype eq 'f'){
-				$synonims{$c}=[] unless (defined $synonims{$c});
-
-				push @phraseslist,[$c,$phrases{$c},$synonims{$c},0];
-			}
-			last if($#phraseslist>12);
-		}
-
-		return @phraseslist;
-	*/
 }
 
-func (obj *TextPhrases) finalFilterPhrases(phrases map[string]int, maxcount int) []string {
+func finalFilterPhrases(phrases map[string]int, maxcount int) []string {
 	// sort phrases by count
 	// and get first maxcount real phrases
 	phraseslist := []string{}
 
 	for phrase, _ := range phrases {
-		ptype := obj.getTypeOfPhrase(phrase)
+		ptype := getTypeOfPhrase(phrase)
 		if ptype == "n" || ptype == "r" || ptype == "s" || ptype == "f" {
 			phraseslist = append(phraseslist, phrase)
 		}
@@ -214,15 +224,15 @@ func (obj *TextPhrases) finalFilterPhrases(phrases map[string]int, maxcount int)
 	return phraseslist
 }
 
-func (obj *TextPhrases) removeCommonPhrases(phrases map[string]int) bool {
+func removeCommonPhrases(phrases map[string]int) bool {
 
 	for p, _ := range phrases {
 		hasgood := false
 
-		words, _ := obj.splitSentenceForWords(p)
+		wordslist, _ := words.SplitSentenceForWords(p)
 
-		for _, w := range words {
-			if !obj.langobj.IsNotUsefulWord(w) {
+		for _, w := range wordslist {
+			if !langobj.IsNotUsefulWord(w) {
 				hasgood = true
 			}
 		}
@@ -234,7 +244,7 @@ func (obj *TextPhrases) removeCommonPhrases(phrases map[string]int) bool {
 	return true
 }
 
-func (obj *TextPhrases) findSinonimPhrases(phrases map[string]int) map[string][]string {
+func findSinonimPhrases(phrases map[string]int) map[string][]string {
 	sinonims := map[string][]string{}
 
 	remove := []string{}
@@ -252,7 +262,7 @@ func (obj *TextPhrases) findSinonimPhrases(phrases map[string]int) map[string][]
 				continue
 			}
 
-			sres := obj.isSubpraseOfPhrase(phrase1, phrase2)
+			sres := isSubpraseOfPhrase(phrase1, phrase2)
 
 			if sres > 0 {
 				phrases[phrase1] += phrases[phrase2]
@@ -278,7 +288,7 @@ func (obj *TextPhrases) findSinonimPhrases(phrases map[string]int) map[string][]
 	return sinonims
 }
 
-func (obj *TextPhrases) findWordsAsPhrases(phrases map[string]int, allwords map[string]int) {
+func findWordsAsPhrases(phrases map[string]int, allwords map[string]int) {
 	// add most used words to phrases list
 	// check if this word is not used in another word in most cases
 	// aim is to find words that are possible company name
@@ -289,7 +299,7 @@ func (obj *TextPhrases) findWordsAsPhrases(phrases map[string]int, allwords map[
 		if float32(count) > mostappearphrase {
 			// check word type
 			// NOTE. this is expensive operation
-			wtype := obj.langobj.GetTypeOfWord(word, "", "")
+			wtype := langobj.GetTypeOfWord(word, "", "")
 
 			if wtype == "n" || wtype == "r" || wtype == "s" && wtype == "f" {
 				phrases[word] = count
@@ -299,7 +309,7 @@ func (obj *TextPhrases) findWordsAsPhrases(phrases map[string]int, allwords map[
 
 }
 
-func (obj *TextPhrases) normalisePhrase(phrase string) string {
+func normalisePhrase(phrase string) string {
 	phrase = strings.ToLower(phrase)
 
 	replace := [][]string{
@@ -317,9 +327,9 @@ func (obj *TextPhrases) normalisePhrase(phrase string) string {
 	return phrase
 }
 
-func (obj *TextPhrases) isSubpraseOfPhrase(phrase1 string, phrase2 string) int8 {
-	nphrase1 := obj.normalisePhrase(phrase1)
-	nphrase2 := obj.normalisePhrase(phrase2)
+func isSubpraseOfPhrase(phrase1 string, phrase2 string) int8 {
+	nphrase1 := normalisePhrase(phrase1)
+	nphrase2 := normalisePhrase(phrase2)
 
 	if nphrase1 == nphrase2 {
 		if phrase1 == strings.ToUpper(phrase1) ||
@@ -329,16 +339,16 @@ func (obj *TextPhrases) isSubpraseOfPhrase(phrase1 string, phrase2 string) int8 
 		return -1
 	}
 
-	check := obj.langobj.IsPhraseSubphrase(nphrase1, nphrase2)
+	check := langobj.IsPhraseSubphrase(nphrase1, nphrase2)
 
 	if check != 0 {
 		return check
 	}
 
-	nphrase1 = obj.trimCommonWords(nphrase1, 0)
-	nphrase2 = obj.trimCommonWords(nphrase2, 0)
+	nphrase1 = trimCommonWords(nphrase1, 0)
+	nphrase2 = trimCommonWords(nphrase2, 0)
 
-	check = obj.langobj.IsPhraseSubphrase(nphrase1, nphrase2)
+	check = langobj.IsPhraseSubphrase(nphrase1, nphrase2)
 
 	if check != 0 {
 		return check
@@ -347,21 +357,21 @@ func (obj *TextPhrases) isSubpraseOfPhrase(phrase1 string, phrase2 string) int8 
 	return 0
 }
 
-func (obj *TextPhrases) isSubpraseOfPhraseExtended(phrase1 string, phrase2 string) int8 {
-	result := obj.isSubpraseOfPhrase(phrase1, phrase2)
+func isSubpraseOfPhraseExtended(phrase1 string, phrase2 string) int8 {
+	result := isSubpraseOfPhrase(phrase1, phrase2)
 
 	if result != 0 {
 		return result
 	}
 
-	if obj.langobj.IsWord(phrase1) && !obj.langobj.IsWord(phrase2) {
-		if obj.langobj.IsWordModInPhrase(phrase2, phrase1) {
+	if langobj.IsWord(phrase1) && !langobj.IsWord(phrase2) {
+		if langobj.IsWordModInPhrase(phrase2, phrase1) {
 			return -1
 		}
 	}
 
-	if obj.langobj.IsWord(phrase2) && !obj.langobj.IsWord(phrase1) {
-		if obj.langobj.IsWordModInPhrase(phrase1, phrase2) {
+	if langobj.IsWord(phrase2) && !langobj.IsWord(phrase1) {
+		if langobj.IsWordModInPhrase(phrase1, phrase2) {
 			return 1
 		}
 	}
@@ -369,29 +379,29 @@ func (obj *TextPhrases) isSubpraseOfPhraseExtended(phrase1 string, phrase2 strin
 	return 0
 }
 
-func (obj *TextPhrases) getTypeOfPhrase(phrase string) string {
+func getTypeOfPhrase(phrase string) string {
 	alltypes := []string{}
 
-	words, _ := obj.splitSentenceForWords(phrase)
+	wordslist, _ := words.SplitSentenceForWords(phrase)
 
-	l := len(words)
+	l := len(wordslist)
 
-	for i, word := range words {
+	for i, word := range wordslist {
 		t := ""
 
-		if obj.langobj.IsNotUsefulWord(word) {
+		if langobj.IsNotUsefulWord(word) {
 			t = "b"
 		} else {
 			prevword := ""
 			if i > 0 {
-				prevword = words[i-1]
+				prevword = wordslist[i-1]
 			}
 			nextword := ""
 
 			if i < l-1 {
-				prevword = words[i+1]
+				prevword = wordslist[i+1]
 			}
-			t = obj.langobj.GetTypeOfWord(word, prevword, nextword)
+			t = langobj.GetTypeOfWord(word, prevword, nextword)
 		}
 
 		alltypes = append(alltypes, t)
