@@ -1,7 +1,6 @@
 package phrases
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -19,16 +18,11 @@ Just as the 19-nation economy sends encouraging signals that challenges from Bre
 Inflation remains far below the ECB’s 2 percent goal after more than two years of unprecedented stimulus and isn’t seen reaching it before 2018. Staff will begin to draw up fresh forecasts in mid-August, and while officials are in no rush to adjust or expand their 1.7 trillion-euro ($1.9 trillion) quantitative-easing plan in September, economists predict Draghi will have to ease policy before the end of the year.
 “Now that the euro-area economy seems to have shrugged off the Brexit vote, focus will again shift on inflation, against the background of those negative news from oil prices,” said Johannes Gareis, an economist at Natixis in Frankfurt. “Yes, the ECB has managed to dispel deflation fears, but all the uncertainty means inflation will stay lower for longer -- and Draghi will have to take notice.”`
 
-	sentenceslist, _ := sentences.SplitTextForSentences(text)
+	sentenceslist, _ := sentences.SplitTextForSentencesFromNews(text)
 
 	wordslist, _ := words.SplitSentencesForWords(sentenceslist)
 
 	phrases, _ := getBasicPhrasesHash(sentenceslist, wordslist)
-
-	for k, v := range phrases {
-		fmt.Printf("%s = %d\n", k, v)
-	}
-	//fmt.Println(phrases)
 
 	expected := map[string]int{
 		"new one appears":         2,

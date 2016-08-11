@@ -23,12 +23,14 @@ func SplitTextForSentencesFromNews(text string) ([]string, error) {
 	// this text is from news sources. It can have specific news format
 	// clean a text from standard news message formatting , and specific language
 
-	text, _ = helper.CleanTextAfterHTML(text)
-
-	return SplitTextForSentences(text)
+	return SplitText(text, true)
 }
 
 func SplitTextForSentences(text string) ([]string, error) {
+	return SplitText(text, false)
+}
+
+func SplitText(text string, news bool) ([]string, error) {
 	// prepare tokenizer
 	sentenceslist := []string{}
 
@@ -49,6 +51,14 @@ func SplitTextForSentences(text string) ([]string, error) {
 
 	// create the default sentence tokenizer
 	tokenizer := sentences.NewSentenceTokenizer(training)
+
+	text, _ = helper.CleanTextAfterHTML(text)
+
+	if news {
+		// this text is from news sources. It can have specific news format
+		// clean a text from standard news message formatting , and specific language
+		text, _, _ = langobj.CleanNewsMessage(text)
+	}
 
 	sentencesobjs := tokenizer.Tokenize(text)
 
@@ -75,7 +85,7 @@ func cleanAndNormaliseSentence(sentence string) (string, error) {
 	replace := [][]string{
 		{"[\\[\\]}{]", ""},
 		{"[:;-]", " "},
-		{"[.?!):]", " "},
+		{"[.?!):]\\s*?$", " "},
 		{"\\s\\s+", " "},
 		{"^\\s+", ""},
 		{"\\s+$", ""},

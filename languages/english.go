@@ -127,6 +127,7 @@ func (lang *English) cleanNewsMessagePrefix(text string) (string, string, error)
 func (lang *English) CleanAndNormaliseSentence(sentence string) (string, error) {
 	replace := [][]string{
 		{"\"", " "},
+		{"[“”]", " "},
 		{"U.S.", "United States"},
 	}
 
