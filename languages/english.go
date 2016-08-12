@@ -1,10 +1,12 @@
 package languages
 
 import (
+	"errors"
 	"regexp"
 	"strings"
 
 	"github.com/gelembjuk/keyphrases/helper"
+	"github.com/gelembjuk/keyphrases/wordnet"
 )
 
 var EnglishStopWords []string
@@ -14,7 +16,9 @@ var EnglishAdverbsOfTime []string
 var EnglishNounsOfTime []string
 
 type English struct {
-	Lang Language
+	Lang          Language
+	WordNet       wordnet.WordNet
+	wordnetstatus uint8
 }
 
 type cleanTemplate struct {
@@ -50,7 +54,22 @@ func init() {
 func (lang English) GetName() string {
 	return "english"
 }
+func (lang *English) SetOptions(options map[string]string) error {
+	if val, ok := options["wordnetdirectory"]; ok {
+		lang.wordnetstatus = 1
+		// create wordnet object
+		lang.WordNet = wordnet.WordNet{}
 
+		err := lang.WordNet.SetDictDirectory(val)
+
+		if err != nil {
+			return err
+		}
+
+		lang.wordnetstatus = 2
+	}
+	return nil
+}
 func (lang English) TruncateCommonPhrase(phrase string) string {
 	return phrase
 }
@@ -254,7 +273,62 @@ func (lang *English) IsWordModInPhrase(phrase, word string) bool {
 	}
 	return false
 }
+func (lang *English) GetTypeOfWord(word string) (string, error) {
 
-func (lang *English) GetTypeOfWord(word string, prevword string, nextword string) string {
-	return "n"
+	return lang.getTypeOfWord(word, "", "")
+}
+func (lang *English) GetTypeOfWordComplex(word string, prevword string, nextword string) (string, error) {
+
+	return lang.getTypeOfWord(word, prevword, nextword)
+}
+
+func (lang *English) getTypeOfWord(word string, prevword string, nextword string) (string, error) {
+	if lang.wordnetstatus != 2 {
+		return "", errors.New("Can not detect type of a word. WordNet dict not configured")
+	}
+	//possible values
+	// n -name
+	// a - action
+	// t - time
+	// c - condition
+	// v - value
+	// r - thing (noun that is not Name)
+	// b - not informative word
+	// f - currency name
+
+	if helper.StringInSlice(word, EnglishStopWords) {
+		return "b", nil
+	}
+
+	if lang.isCurrencyName(word) {
+		return "f", nil
+	}
+
+	numbervaluepattern := "^[0-9$.,-]+$"
+
+	if t, _ := regexp.MatchString(numbervaluepattern, word); t {
+		return "v", nil
+	}
+
+	synonims := lang.getListOfSynonims(word)
+
+	for _, syn := range synonims {
+		if t, _ := regexp.MatchString(numbervaluepattern, syn); t {
+			return "v", nil
+		}
+	}
+
+	if len(word) > 1 && strings.ToUpper(word) == word {
+		return "n", nil
+	}
+
+	return "n", nil
+}
+
+func (lang *English) getListOfSynonims(word string) []string {
+	return []string{}
+}
+
+func (lang *English) isCurrencyName(word string) bool {
+	return false
 }

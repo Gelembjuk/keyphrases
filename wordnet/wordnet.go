@@ -7,9 +7,12 @@ package wordnet
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/gelembjuk/keyphrases/helper"
 )
 
 const nounIndex = "index.noun"
@@ -17,20 +20,40 @@ const verbIndex = "index.verb"
 const adjIndex = "index.adj"
 const advIndex = "index.adv"
 
+const nounData = "data.noun"
+const verbData = "data.verb"
+const adjData = "data.adj"
+const advData = "data.adv"
+
 type WordNet struct {
 	DictLocationDirectory string
 	senseCache            map[string]string
 	fileHandles           map[int]*os.File
+	dataFileHandles       map[int]*os.File
 }
 
 type indexRecord struct {
 	Lemma       string
 	Pos         string
-	Offsets     []int
+	Offsets     []string
 	SenseCnt    int
 	PCnt        int
 	TagSenseCnt int
 	Found       bool
+}
+
+type wordReference struct {
+	Lemma  string
+	Pos    string
+	Offset string
+}
+
+type dataRecord struct {
+	Lemma    string
+	Pos      string
+	Words    []string
+	WordsCnt int
+	Found    bool
 }
 
 func (this *WordNet) init() error {
@@ -47,8 +70,16 @@ func (this *WordNet) init() error {
 	return nil
 }
 
-func (this *WordNet) SetDictDirectory(path string) {
+func (this *WordNet) SetDictDirectory(path string) error {
+	indexpath := path + nounIndex
+
+	if _, err := os.Stat(indexpath); os.IsNotExist(err) {
+		return errors.New("WordNet directory is not set or not found")
+	}
+
 	this.DictLocationDirectory = path
+
+	return nil
 }
 
 func (this *WordNet) GetWord(word string) (string, error) {
@@ -62,13 +93,30 @@ func (this *WordNet) GetWord(word string) (string, error) {
 }
 
 func (this *WordNet) GetWordOptions(word string) ([]string, error) {
-	err := this.init()
+	wordmap, err := this.GetWordOptionsMap(word)
 
 	if err != nil {
 		return []string{}, err
 	}
 
-	options := []string{}
+	if len(wordmap) == 0 {
+		return []string{}, nil
+	}
+	// sort by values and return sorted
+
+	options := helper.KeysSortedByValuesReverse(wordmap)
+
+	return options, nil
+}
+
+func (this *WordNet) GetWordOptionsMap(word string) (map[string]int, error) {
+	options := map[string]int{}
+
+	err := this.init()
+
+	if err != nil {
+		return options, err
+	}
 
 	for i := 1; i <= 4; i++ {
 		r, e := this.getRecordForWord(word, i)
@@ -78,10 +126,52 @@ func (this *WordNet) GetWordOptions(word string) ([]string, error) {
 		}
 
 		if r.Found {
-			options = append(options, r.Pos)
+			count := len(r.Offsets)
+			options[r.Pos] = count
 		}
 	}
 
+	return options, nil
+}
+
+func (this *WordNet) GetWordSynonims(word string) ([]string, error) {
+	return this.GetWordSences(word, "syns")
+}
+
+func (this *WordNet) GetWordSences(word string, sensetype string) ([]string, error) {
+	options := []string{}
+
+	err := this.init()
+
+	if err != nil {
+		return options, err
+	}
+
+	// local structure to keep list of senses and references
+
+	wordreferences := []wordReference{}
+
+	// try 4 supported Pos to get list of offsets
+	for i := 1; i <= 4; i++ {
+		r, e := this.getRecordForWord(word, i)
+
+		if e != nil {
+			return options, e
+		}
+
+		if r.Found {
+			for _, o := range r.Offsets {
+				ref := wordReference{Lemma: r.Lemma, Pos: r.Pos, Offset: o}
+
+				wordreferences = append(wordreferences, ref)
+			}
+		}
+	}
+
+	for _, ref := range wordreferences {
+		fmt.Printf("%s, %d, %s\n", ref.Lemma, ref.Pos, ref.Offset)
+	}
+	os.Exit(1)
 	return options, nil
 }
 
@@ -131,8 +221,9 @@ func (this *WordNet) getRecordForWord(word string, source int) (indexRecord, err
 
 			if len(tmpres) > 2 {
 				for i := 2; i < len(tmpres); i++ {
-					off, _ := strconv.Atoi(tmpres[i])
-					result.Offsets = append(result.Offsets, off)
+					if tmpres[i] != "" {
+						result.Offsets = append(result.Offsets, tmpres[i])
+					}
 				}
 			}
 
@@ -149,7 +240,37 @@ func (this *WordNet) getRecordForWord(word string, source int) (indexRecord, err
 
 	return result, nil
 }
+func (this *WordNet) dataLookup(source int, offset string) (dataRecord, error) {
+	result := dataRecord{}
+	// get file handle
+	fhandle, err := this.getDataFileHandle(source)
 
+	if err != nil {
+		return result, err
+	}
+
+	seekoffset, err2 := strconv.Atoi(offset)
+
+	if err != nil {
+		return result, err2
+	}
+
+	_, err = fhandle.Seek(int64(seekoffset), 0)
+
+	if err != nil {
+		return result, err
+	}
+
+	reader := bufio.NewReader(fhandle)
+
+	line, _ := reader.ReadString('\n')
+
+	fmt.Println(line)
+
+	os.Exit(1)
+
+	return result, nil
+}
 func (this *WordNet) getFileHandle(source int) (*os.File, error) {
 	if handle, ok := this.fileHandles[source]; ok {
 		return handle, nil
@@ -183,10 +304,46 @@ func (this *WordNet) getFileHandle(source int) (*os.File, error) {
 	return this.fileHandles[source], nil
 }
 
+func (this *WordNet) getDataFileHandle(source int) (*os.File, error) {
+	if handle, ok := this.dataFileHandles[source]; ok {
+		return handle, nil
+	}
+	// open this file
+	var filepath string
+
+	switch {
+	case source == 1:
+		filepath = nounData
+	case source == 2:
+		filepath = verbData
+	case source == 3:
+		filepath = adjData
+	case source == 4:
+		filepath = advData
+	default:
+		return nil, errors.New("Unknown word type in data file open")
+	}
+
+	filepath = this.DictLocationDirectory + filepath
+
+	f, err := os.Open(filepath)
+
+	if err != nil {
+		return nil, err
+	}
+
+	this.dataFileHandles[source] = f
+
+	return this.dataFileHandles[source], nil
+}
+
 func (this *WordNet) Free() {
 	for i, f := range this.fileHandles {
 		f.Close()
 		delete(this.fileHandles, i)
 	}
-
+	for i, f := range this.dataFileHandles {
+		f.Close()
+		delete(this.dataFileHandles, i)
+	}
 }

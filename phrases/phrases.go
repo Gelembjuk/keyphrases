@@ -292,7 +292,7 @@ func findWordsAsPhrases(phrases map[string]int, allwords map[string]int) {
 		if float32(count) > mostappearphrase {
 			// check word type
 			// NOTE. this is expensive operation
-			wtype := langobj.GetTypeOfWord(word, "", "")
+			wtype, _ := langobj.GetTypeOfWord(word)
 
 			if wtype == "n" || wtype == "r" || wtype == "s" && wtype == "f" {
 				phrases[word] = count
@@ -394,7 +394,7 @@ func getTypeOfPhrase(phrase string) string {
 			if i < l-1 {
 				prevword = wordslist[i+1]
 			}
-			t = langobj.GetTypeOfWord(word, prevword, nextword)
+			t, _ = langobj.GetTypeOfWordComplex(word, prevword, nextword)
 		}
 
 		alltypes = append(alltypes, t)

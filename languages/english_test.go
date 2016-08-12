@@ -51,3 +51,34 @@ func TestCleanNewsMessage(t *testing.T) {
 		}
 	}
 }
+
+func TestGetTypeOfWord(t *testing.T) {
+
+	tests := map[string]string{
+		"bet": "n",
+		"car": "n",
+	}
+
+	eng := English{}
+
+	_, err := eng.GetTypeOfWord("xxx")
+
+	if err == nil {
+		t.Fatalf("No expected error on misconfigured WordNet.")
+	}
+
+	eng.SetOptions(map[string]string{"wordnetdirectory": "../wordnet/dict2/"})
+
+	for word, wtype := range tests {
+
+		wordtype, err := eng.GetTypeOfWord(word)
+
+		if err != nil {
+			t.Fatalf("Get Word Type Error %s.", err.Error())
+		}
+
+		if wordtype != wtype {
+			t.Fatalf("For word %s, got type %s, expected %s.", word, wordtype, wtype)
+		}
+	}
+}

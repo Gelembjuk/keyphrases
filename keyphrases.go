@@ -15,10 +15,11 @@ import (
 )
 
 type TextPhrases struct {
-	text       string
-	Language   string
-	NewsSource bool
-	langobj    languages.LangClass
+	text            string
+	Language        string
+	LanguageOptions map[string]string
+	NewsSource      bool
+	langobj         languages.LangClass
 }
 
 func (obj *TextPhrases) Init() error {
@@ -29,6 +30,10 @@ func (obj *TextPhrases) Init() error {
 		words.SetLangObject(obj.langobj)
 		sentences.SetLangObject(obj.langobj)
 		phrases.SetLangObject(obj.langobj)
+
+		if len(obj.LanguageOptions) > 0 {
+
+		}
 	}
 
 	return err

@@ -6,6 +6,7 @@ import (
 
 type LangClass interface {
 	GetName() string
+	SetOptions(options map[string]string) error
 	TruncateCommonPhrase(phrase string) string
 	TruncateCompanyName(phrase string) string
 	CheckIfIsCompanyName(phrase string) bool
@@ -19,7 +20,8 @@ type LangClass interface {
 	IsNotUsefulWord(word string) bool
 	IsPhraseSubphrase(phrase1 string, phrase2 string) int8
 	IsWordModInPhrase(phrase, word string) bool
-	GetTypeOfWord(word string, prevword string, nextword string) string
+	GetTypeOfWord(word string) (string, error)
+	GetTypeOfWordComplex(word string, prevword string, nextword string) (string, error)
 }
 
 type Language struct {
