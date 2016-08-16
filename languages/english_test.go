@@ -55,8 +55,12 @@ func TestCleanNewsMessage(t *testing.T) {
 func TestGetTypeOfWord(t *testing.T) {
 
 	tests := map[string]string{
-		"bet": "n",
-		"car": "n",
+		"bet":    "a",
+		"car":    "r",
+		"Car":    "n",
+		"monday": "t",
+		"ten":    "v",
+		"100":    "v",
 	}
 
 	eng := English{}
@@ -67,7 +71,7 @@ func TestGetTypeOfWord(t *testing.T) {
 		t.Fatalf("No expected error on misconfigured WordNet.")
 	}
 
-	eng.SetOptions(map[string]string{"wordnetdirectory": "../wordnet/dict2/"})
+	eng.SetOptions(map[string]string{"wordnetdirectory": "../wordnet/dict/"})
 
 	for word, wtype := range tests {
 

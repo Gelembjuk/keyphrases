@@ -55,6 +55,7 @@ func (lang English) GetName() string {
 	return "english"
 }
 func (lang *English) SetOptions(options map[string]string) error {
+
 	if val, ok := options["wordnetdirectory"]; ok {
 		lang.wordnetstatus = 1
 		// create wordnet object
@@ -69,22 +70,6 @@ func (lang *English) SetOptions(options map[string]string) error {
 		lang.wordnetstatus = 2
 	}
 	return nil
-}
-func (lang English) TruncateCommonPhrase(phrase string) string {
-	return phrase
-}
-
-func (lang English) TruncateCompanyName(phrase string) string {
-	return phrase
-}
-func (lang English) CheckIfIsCompanyName(phrase string) bool {
-	return true
-}
-func (lang English) CheckIfIsSimilar(phrase1 string, phrase2 string) uint8 {
-	return 0
-}
-func (lang English) NormalizeText(text string) string {
-	return ""
 }
 
 func (lang *English) CleanNewsMessage(text string) (string, string, error) {
@@ -148,6 +133,8 @@ func (lang *English) CleanAndNormaliseSentence(sentence string) (string, error) 
 		{"\"", " "},
 		{"[“”]", " "},
 		{"U.S.", "United States"},
+		{"U.K.", "United Kingdom"},
+		{"E.U.", "Europe Union"},
 	}
 
 	for _, template := range replace {
@@ -283,9 +270,7 @@ func (lang *English) GetTypeOfWordComplex(word string, prevword string, nextword
 }
 
 func (lang *English) getTypeOfWord(word string, prevword string, nextword string) (string, error) {
-	if lang.wordnetstatus != 2 {
-		return "", errors.New("Can not detect type of a word. WordNet dict not configured")
-	}
+
 	//possible values
 	// n -name
 	// a - action
@@ -310,7 +295,11 @@ func (lang *English) getTypeOfWord(word string, prevword string, nextword string
 		return "v", nil
 	}
 
-	synonims := lang.getListOfSynonims(word)
+	if lang.wordnetstatus != 2 {
+		return "", errors.New("Can not detect type of a word. WordNet dict not configured")
+	}
+
+	synonims, _ := lang.WordNet.GetWordSynonims(word)
 
 	for _, syn := range synonims {
 		if t, _ := regexp.MatchString(numbervaluepattern, syn); t {
@@ -322,13 +311,64 @@ func (lang *English) getTypeOfWord(word string, prevword string, nextword string
 		return "n", nil
 	}
 
-	return "n", nil
-}
+	options, err := lang.WordNet.GetWordOptions(word)
 
-func (lang *English) getListOfSynonims(word string) []string {
-	return []string{}
+	if err == nil {
+		if len(options) > 0 && options[0] == "v" {
+			return "a", nil
+		}
+	}
+
+	if helper.StringInSlice("r", options) || len(options) == 1 && options[0] == "a" {
+		return "c", nil
+	}
+
+	// check if a word is about a time
+
+	lword := strings.ToLower(word)
+
+	if helper.StringInSlice(lword, EnglishAdverbsOfTime) {
+		return "t", nil
+	}
+
+	ucword := helper.UpperCaseFirstLetter(word)
+
+	if helper.StringInSlice(ucword, EnglishNounsOfTime) {
+		return "t", nil
+	}
+
+	lword = lang.simplifyWord(strings.ToLower(word))
+
+	if helper.StringInSlice(lword, EnglishAdverbsOfTime) {
+		return "t", nil
+	}
+
+	ucword = helper.UpperCaseFirstLetter(lword)
+
+	if helper.StringInSlice(ucword, EnglishNounsOfTime) {
+		return "t", nil
+	}
+
+	if len(word) > 1 && ucword == word {
+		return "n", nil
+	}
+
+	return "r", nil
 }
 
 func (lang *English) isCurrencyName(word string) bool {
 	return false
+}
+
+func (lang *English) simplifyWord(word string) string {
+	lenth := len(word)
+
+	if lenth > 2 && word[lenth-2:] == "'s" {
+		return word[0 : lenth-2]
+	}
+	if lenth > 1 &&
+		(word[lenth-1:lenth-1] == "'" || word[lenth-1:lenth-1] == "s") {
+		return word[:lenth-1]
+	}
+	return word
 }

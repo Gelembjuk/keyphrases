@@ -7,7 +7,7 @@ package wordnet
 import (
 	"bufio"
 	"errors"
-	"fmt"
+
 	"os"
 	"strconv"
 	"strings"
@@ -45,6 +45,7 @@ type indexRecord struct {
 type wordReference struct {
 	Lemma  string
 	Pos    string
+	PosNum int
 	Offset string
 }
 
@@ -65,6 +66,7 @@ func (this *WordNet) init() error {
 	}
 
 	this.fileHandles = map[int]*os.File{}
+	this.dataFileHandles = map[int]*os.File{}
 	this.senseCache = map[string]string{}
 
 	return nil
@@ -135,16 +137,12 @@ func (this *WordNet) GetWordOptionsMap(word string) (map[string]int, error) {
 }
 
 func (this *WordNet) GetWordSynonims(word string) ([]string, error) {
-	return this.GetWordSences(word, "syns")
-}
-
-func (this *WordNet) GetWordSences(word string, sensetype string) ([]string, error) {
-	options := []string{}
+	synonims := []string{word}
 
 	err := this.init()
 
 	if err != nil {
-		return options, err
+		return synonims, err
 	}
 
 	// local structure to keep list of senses and references
@@ -156,12 +154,12 @@ func (this *WordNet) GetWordSences(word string, sensetype string) ([]string, err
 		r, e := this.getRecordForWord(word, i)
 
 		if e != nil {
-			return options, e
+			return synonims, e
 		}
 
 		if r.Found {
 			for _, o := range r.Offsets {
-				ref := wordReference{Lemma: r.Lemma, Pos: r.Pos, Offset: o}
+				ref := wordReference{Lemma: r.Lemma, Pos: r.Pos, PosNum: i, Offset: o}
 
 				wordreferences = append(wordreferences, ref)
 			}
@@ -169,10 +167,19 @@ func (this *WordNet) GetWordSences(word string, sensetype string) ([]string, err
 	}
 
 	for _, ref := range wordreferences {
-		fmt.Printf("%s, %d, %s\n", ref.Lemma, ref.Pos, ref.Offset)
+		synonimslist, err := this.getWordReferencesSynonims(ref)
+
+		if err == nil {
+
+			for _, s := range synonimslist {
+				if !helper.StringInSlice(s, synonims) {
+					synonims = append(synonims, s)
+				}
+			}
+		}
+
 	}
-	os.Exit(1)
-	return options, nil
+	return synonims, nil
 }
 
 func (this *WordNet) getRecordForWord(word string, source int) (indexRecord, error) {
@@ -240,37 +247,76 @@ func (this *WordNet) getRecordForWord(word string, source int) (indexRecord, err
 
 	return result, nil
 }
-func (this *WordNet) dataLookup(source int, offset string) (dataRecord, error) {
-	result := dataRecord{}
+
+func (this *WordNet) getWordReferencesSynonims(reference wordReference) ([]string, error) {
+	senses := []string{}
+
+	line, err := this.dataLookup(reference.PosNum, reference.Offset)
+
+	if err != nil {
+		return senses, err
+	}
+
+	// get synonims from this line
+	splitline := strings.SplitN(line, " ", 5)
+
+	if len(splitline) < 5 {
+		return senses, errors.New("Wrong line in WordNet data file")
+	}
+
+	line = splitline[4]
+
+	wordscount, err2 := strconv.ParseInt(splitline[3], 16, 0)
+
+	if err2 != nil || wordscount < 1 {
+		return senses, errors.New("Wrong line in WordNet data file")
+	}
+
+	var i int64
+	for i = 0; i < wordscount; i++ {
+		splitline = strings.SplitN(line, " ", 3)
+
+		if len(splitline) < 3 {
+			return senses, errors.New("Wrong line in WordNet data file")
+		}
+
+		senses = append(senses, splitline[0])
+		line = splitline[2]
+	}
+	return senses, nil
+}
+
+func (this *WordNet) dataLookup(source int, offset string) (string, error) {
 	// get file handle
 	fhandle, err := this.getDataFileHandle(source)
 
 	if err != nil {
-		return result, err
+		return "", err
 	}
 
 	seekoffset, err2 := strconv.Atoi(offset)
 
 	if err != nil {
-		return result, err2
+		return "", err2
 	}
 
 	_, err = fhandle.Seek(int64(seekoffset), 0)
 
 	if err != nil {
-		return result, err
+		return "", err
 	}
 
 	reader := bufio.NewReader(fhandle)
 
-	line, _ := reader.ReadString('\n')
+	line, err3 := reader.ReadString('\n')
 
-	fmt.Println(line)
+	if err3 != nil {
+		return "", err3
+	}
 
-	os.Exit(1)
-
-	return result, nil
+	return line, nil
 }
+
 func (this *WordNet) getFileHandle(source int) (*os.File, error) {
 	if handle, ok := this.fileHandles[source]; ok {
 		return handle, nil

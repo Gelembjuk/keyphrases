@@ -35,8 +35,8 @@ func TestGetWordOptionsMap(t *testing.T) {
 	wordnet := WordNet{DictLocationDirectory: "dict/"}
 
 	tests := map[string]map[string]int{
-		"bet": map[string]int{"n": 4, "v": 5},
-		"car": map[string]int{"n": 7},
+		"bet": map[string]int{"n": 2, "v": 3},
+		"car": map[string]int{"n": 5},
 	}
 
 	for word, types := range tests {
@@ -70,6 +70,18 @@ func TestGetWordSynonims(t *testing.T) {
 			"gondola",
 			"elevator_car",
 			"cable_car",
+		},
+		"bet": []string{
+			"bet",
+			"stake",
+			"stakes",
+			"wager",
+			"play",
+			"count",
+			"depend",
+			"look",
+			"calculate",
+			"reckon",
 		},
 	}
 

@@ -27,13 +27,14 @@ func (obj *TextPhrases) Init() error {
 	obj.langobj, err = languages.GetLangObject(obj.Language)
 
 	if err == nil {
+		if len(obj.LanguageOptions) > 0 {
+			obj.langobj.SetOptions(obj.LanguageOptions)
+		}
+
 		words.SetLangObject(obj.langobj)
 		sentences.SetLangObject(obj.langobj)
 		phrases.SetLangObject(obj.langobj)
 
-		if len(obj.LanguageOptions) > 0 {
-
-		}
 	}
 
 	return err
