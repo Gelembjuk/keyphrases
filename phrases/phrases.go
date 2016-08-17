@@ -2,6 +2,7 @@ package phrases
 
 import (
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -17,6 +18,12 @@ type Phrase struct {
 }
 
 var langobj languages.LangClass
+
+type PhrasesList []Phrase
+
+func (p PhrasesList) Len() int           { return len(p) }
+func (p PhrasesList) Less(i, j int) bool { return p[i].Count < p[j].Count }
+func (p PhrasesList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 func SetLangObject(lang languages.LangClass) {
 	langobj = lang
@@ -38,16 +45,16 @@ func (p Phrase) String() string {
 	return result
 }
 
-func GetPhrases(sentences []string, allwords map[string]int) ([]Phrase, error) {
+func GetPhrases(sentences []string, allwords map[string]int) (PhrasesList, error) {
 	phrases, _ := getBasicPhrasesHash(sentences, allwords)
 
 	removeCommonPhrases(phrases)
 
-	synonims := findSinonimPhrases(phrases)
+	synonims := findSynonimPhrases(phrases)
 
 	findWordsAsPhrases(phrases, allwords)
 
-	phraseslist := []Phrase{}
+	phraseslist := PhrasesList{}
 
 	finalphrases := finalFilterPhrases(phrases, 12)
 
@@ -59,6 +66,8 @@ func GetPhrases(sentences []string, allwords map[string]int) ([]Phrase, error) {
 		phraseext := Phrase{Phrase: phrase, Synonims: synonims[phrase], Count: phrases[phrase]}
 		phraseslist = append(phraseslist, phraseext)
 	}
+
+	sort.Sort(sort.Reverse(phraseslist))
 
 	return phraseslist, nil
 }
@@ -90,17 +99,20 @@ func trimCommonWords(phrase string, mode int8) string {
 }
 
 func getBasicPhrasesHash(sentences []string, allwords map[string]int) (map[string]int, error) {
-	// keep a previous words history in  phrase
+	// for a word we keep list of all words that follows it in sentences
 	allwordsh := map[string][]string{}
 
 	// result list of phrases
 	phrases := map[string]int{}
 
 	for _, sentence := range sentences {
+		// for each sentence , split it for words
 		wordslist, _ := words.SplitSentenceForWords(sentence)
 
+		// list of all previous words for a word in this sentence
 		prevphrases := []string{}
 
+		// possible phrases. Some repeated list of folowing words
 		pphrases := []string{}
 
 		for _, word := range wordslist {
@@ -109,54 +121,57 @@ func getBasicPhrasesHash(sentences []string, allwords map[string]int) (map[strin
 
 			if len(prevphrases) > 0 {
 
-				for i := 0; i < len(prevphrases); i++ {
-					prevword := prevphrases[i]
+				//for i := 0; i < len(prevphrases); i++ {
+				i := len(prevphrases) - 1
+				prevword := prevphrases[i]
 
-					addedword := 0
+				addedword := 0
 
-					if _, ok := allwordsh[prevword]; !ok {
-						//add this for all secuences
+				if _, ok := allwordsh[prevword]; !ok {
+					//add this for all secuences
 
-						allwordsh[prevword] = []string{word}
-					} else {
-						if helper.StringInSlice(word, allwordsh[prevword]) {
+					allwordsh[prevword] = []string{word}
+				} else {
+					if helper.StringInSlice(word, allwordsh[prevword]) {
+						// this means "word" already followed prevword
 
-							//this is phrase and it occured 2 times now
-							// it means in some previous sentence this 2 words also were one after other
+						//this is phrase and it occured 2 times now
+						// it means in some previous sentence this 2 words also were one after other
 
-							// build possible phrase
-							if pphrases[i] == "" {
-								pphrases[i] = prevword + " " + word
-								prevwordaddedtosomephrase = 1
-							} else {
-								pphrases[i] = pphrases[i] + " " + word
-							}
-							addedword = 1
+						// build possible phrase
+						if i == 0 || i > 0 && pphrases[i-1] == "" {
+							pphrases[i] = prevword + " " + word
+							prevwordaddedtosomephrase = 1
 						} else {
-							//add to array
-							allwordsh[prevword] = append(allwordsh[prevword], word)
+							pphrases[i] = pphrases[i-1] + " " + word
 						}
-					}
-					if addedword == 0 && pphrases[i] != "" {
-						// phrase building complete. This is final step
-						// simplify phrase
-						pphrases[i] = trimCommonWords(pphrases[i], 0)
-
-						if words.WordsCount(pphrases[i]) > 1 {
-							//this is the end of the phrase
-
-							if _, ok := phrases[pphrases[i]]; ok {
-								phrases[pphrases[i]]++
-							} else {
-								phrases[pphrases[i]] = 2
-							}
-						}
-						pphrases[i] = ""
-					}
-					if addedword == 1 {
-						wordaddedtosomephrase = 1
+						addedword = 1
+					} else {
+						//add to array of words that follows after "prevword"
+						allwordsh[prevword] = append(allwordsh[prevword], word)
 					}
 				}
+				if addedword == 0 && pphrases[i] != "" {
+					// phrase building complete. This is final step
+					//
+					// simplify phrase
+					pphrases[i] = trimCommonWords(pphrases[i], 0)
+
+					if words.WordsCount(pphrases[i]) > 1 {
+						//this is the end of the phrase
+
+						if _, ok := phrases[pphrases[i]]; ok {
+							phrases[pphrases[i]]++
+						} else {
+							phrases[pphrases[i]] = 2
+						}
+					}
+					pphrases[i] = ""
+				}
+				if addedword == 1 {
+					wordaddedtosomephrase = 1
+				}
+				//}
 			}
 
 			if prevwordaddedtosomephrase == 1 {
@@ -167,29 +182,44 @@ func getBasicPhrasesHash(sentences []string, allwords map[string]int) (map[strin
 					}
 				}
 			}
+
+			// add a word to list of words in first part of a sentence
 			prevphrases = append(prevphrases, word)
+
 			pphrases = append(pphrases, "")
 
 			if wordaddedtosomephrase == 1 {
-				//it is needed to remove 1 occurence of this word from list of most used words
+				// this word is part of some phrase
+				// it is needed to remove 1 occurence of this word from list of most used words
 				if _, ok := allwords[word]; ok {
 					allwords[word]--
 				}
 			}
 		}
 
-		for _, phrase := range pphrases {
-			if phrase != "" {
-				phrase = trimCommonWords(phrase, 1)
-				//this is the end of the phrase
-				if words.WordsCount(phrase) > 1 && words.WordsCount(phrase) <= 6 {
-					if _, ok := phrases[phrase]; ok {
-						phrases[phrase]++
-					} else {
-						phrases[phrase] = 2
-					}
+		pl := len(pphrases)
+
+		for i := 1; i < pl; i++ {
+			// we start from 1 because 0 is always empty string
+			phrase := pphrases[i]
+
+			if phrase == "" {
+				continue
+			}
+
+			if i < pl-1 && strings.Index(pphrases[i+1], phrase+" ") == 0 {
+				// next phrase includes this phrase . we can skip current
+				continue
+			}
+
+			phrase = trimCommonWords(phrase, 1)
+			//this is the end of the phrase
+			if words.WordsCount(phrase) > 1 && words.WordsCount(phrase) <= 6 {
+				if _, ok := phrases[phrase]; ok {
+					phrases[phrase]++
+				} else {
+					phrases[phrase] = 2
 				}
-				phrase = ""
 			}
 		}
 	}
@@ -203,7 +233,9 @@ func finalFilterPhrases(phrases map[string]int, maxcount int) []string {
 	// and get first maxcount real phrases
 	phraseslist := []string{}
 
-	for phrase, _ := range phrases {
+	sortedphrases := helper.KeysSortedByValuesReverse(phrases)
+
+	for _, phrase := range sortedphrases {
 		ptype := getTypeOfPhrase(phrase)
 		if ptype == "n" || ptype == "r" || ptype == "s" || ptype == "f" {
 			phraseslist = append(phraseslist, phrase)
@@ -237,7 +269,7 @@ func removeCommonPhrases(phrases map[string]int) bool {
 	return true
 }
 
-func findSinonimPhrases(phrases map[string]int) map[string][]string {
+func findSynonimPhrases(phrases map[string]int) map[string][]string {
 	sinonims := map[string][]string{}
 
 	remove := []string{}

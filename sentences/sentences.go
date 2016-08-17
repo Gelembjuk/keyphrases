@@ -83,6 +83,7 @@ func cleanAndNormaliseSentence(sentence string) (string, error) {
 	sentence, _ = langobj.CleanAndNormaliseSentence(sentence)
 
 	replace := [][]string{
+		{"\\(\\s*?https?://[^ )]+\\s*?\\)", ""},
 		{"[\\[\\]}{]", ""},
 		{"[:;-]", " "},
 		{"[.?!):]\\s*?$", " "},

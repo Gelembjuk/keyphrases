@@ -44,7 +44,7 @@ func init() {
 		"out", "on", "off", "over", "under", "again", "further", "then", "once", "here", "there", "when",
 		"where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such",
 		"no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "de", "will", "of", "without"}
-	EnglishBadWordsForAnd = []string{"have", "has", "had", "can", "up", "could", "may", "per", "said", "says", "yet"}
+	EnglishBadWordsForAnd = []string{"have", "has", "had", "can", "up", "could", "may", "per", "said", "says", "yet", "already", "say"}
 	EnglishBadWordsNotUseful = []string{"inc", "said"}
 	EnglishAdverbsOfTime = []string{"after", "already", "during", "finally", "just", "last", "later", "next", "now", "recently", "soon", "then", "tomorrow", "when", "while", "yesterday", "year", "week", "day", "month", "hour", "quarter"}
 	EnglishNounsOfTime = []string{"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"}

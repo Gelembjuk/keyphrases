@@ -4,9 +4,6 @@ package keyphrases
 *
  */
 import (
-	"fmt"
-	"os"
-
 	"github.com/gelembjuk/keyphrases/helper"
 	"github.com/gelembjuk/keyphrases/languages"
 	"github.com/gelembjuk/keyphrases/phrases"
@@ -40,7 +37,7 @@ func (obj *TextPhrases) Init() error {
 	return err
 }
 
-func (obj *TextPhrases) GetKeyPhrases(text string) []string {
+func (obj *TextPhrases) GetKeyPhrases(text string) []phrases.Phrase {
 	obj.text = text
 
 	//phrases := []string{}
@@ -62,12 +59,7 @@ func (obj *TextPhrases) GetKeyPhrases(text string) []string {
 
 	phraseslist, _ := phrases.GetPhrases(sentenceslist, wordslist)
 
-	for _, p := range phraseslist {
-		fmt.Printf("%s\n", p)
-	}
-	os.Exit(0)
-
-	return sentenceslist
+	return phraseslist
 }
 
 func (obj *TextPhrases) GetKeyWords(text string) []string {
