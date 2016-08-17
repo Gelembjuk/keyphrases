@@ -15,7 +15,7 @@ go get github.com/gelembjuk/keyphrases
 
 Get key phrases from a text saved in a file .
 
-```
+```go
 package main
 
 import (
@@ -47,7 +47,7 @@ func main() {
 
 Get key phrases from a web page. We use the package github.com/gelembjuk/articletext to gextract a text from a web page
 
-```
+```go
 package main
 
 import (
