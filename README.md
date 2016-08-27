@@ -80,7 +80,7 @@ func main() {
 	// Create a text analyser object. It requires a path to WordNet dictionary directory
 	 
 	analyser := keyphrases.TextPhrases{Language: "english",
-		LanguageOptions: map[string]string{"wordnetdirectory": "/home/roman/Projects/Go/WordNet/dict"}}
+		LanguageOptions: map[string]string{"wordnetdirectory": "./WordNet/dict"}}
 
 	// this is required procedure to initialise analyser 
 	analyser.Init()
