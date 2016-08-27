@@ -19,6 +19,9 @@ type TextPhrases struct {
 	langobj         languages.LangClass
 }
 
+type Phrase phrases.Phrase
+type PhrasesList phrases.PhrasesList
+
 func (obj *TextPhrases) Init() error {
 	var err error
 	obj.langobj, err = languages.GetLangObject(obj.Language)
@@ -37,7 +40,7 @@ func (obj *TextPhrases) Init() error {
 	return err
 }
 
-func (obj *TextPhrases) GetKeyPhrases(text string) []phrases.Phrase {
+func (obj *TextPhrases) GetKeyPhrases(text string) PhrasesList {
 	obj.text = text
 
 	//phrases := []string{}
@@ -57,7 +60,13 @@ func (obj *TextPhrases) GetKeyPhrases(text string) []phrases.Phrase {
 	wordslist, _ := words.SplitSentencesForWords(sentenceslist)
 	// 4. Get phrases from sentences using words
 
-	phraseslist, _ := phrases.GetPhrases(sentenceslist, wordslist)
+	phraseslisttmp, _ := phrases.GetPhrases(sentenceslist, wordslist)
+
+	phraseslist := PhrasesList{}
+
+	for _, i := range phraseslisttmp {
+		phraseslist = append(phraseslist, i)
+	}
 
 	return phraseslist
 }
