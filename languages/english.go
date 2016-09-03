@@ -373,11 +373,12 @@ func (lang *English) simplifyWord(word string) string {
 	return word
 }
 
-func (lang English) SimplifyPhraseFromNews(phrase string) string {
+func (lang English) SimplifyCompanyName(phrase string) string {
 	// if there is a comma then truncate everything after
 	if strings.Index(phrase, ",") > 1 {
-		phrase = phrase[0 : strings.Index(phrase, ",")-1]
+		phrase = phrase[0:strings.Index(phrase, ",")]
 	}
+
 	replace := [][]string{
 		{"\\s+$", ""},
 		{"^\\s+", ""},
@@ -387,8 +388,13 @@ func (lang English) SimplifyPhraseFromNews(phrase string) string {
 		{" corp\\.?$", ""},
 		{" corporation$", ""},
 		{" incorporated$", ""},
+		{" international$", ""},
 		{" enterprises$", ""},
+		{" limited$", ""},
 		{" company$", ""},
+		{" & co\\..*?$", ""},
+		{" co\\.?\\s?$", ""},
+		{" & company.*?$", ""},
 		{"^the ", ""},
 		{"   ", " "},
 		{"  ", " "},
@@ -399,6 +405,25 @@ func (lang English) SimplifyPhraseFromNews(phrase string) string {
 
 	for _, template := range replace {
 		r := regexp.MustCompile("(?i)" + template[0])
+
+		phrase = r.ReplaceAllString(phrase, template[1])
+	}
+	return phrase
+}
+
+func (lang English) SimplifyCompanyNameExt(phrase string) string {
+	// if there is a comma then truncate everything after
+	if strings.Index(phrase, ",") > 1 {
+		phrase = phrase[0:strings.Index(phrase, ",")]
+	}
+
+	replace := [][]string{
+		{" \\([A-Z0-9]+\\)\\s?$", ""},
+		{" [A-Z.]{3,}\\s?$", ""},
+	}
+
+	for _, template := range replace {
+		r := regexp.MustCompile(template[0])
 
 		phrase = r.ReplaceAllString(phrase, template[1])
 	}

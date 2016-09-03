@@ -86,27 +86,48 @@ func TestGetTypeOfWord(t *testing.T) {
 		}
 	}
 }
-func TestSimplifyPhraseFromNews(t *testing.T) {
+func TestSimplifyCompanyName(t *testing.T) {
 
 	tests := map[string]string{
-		"Apple ltd.":          "Apple",
-		"Bla Bla Inc.":        "Bla Bla",
-		"Bla Bla PLC.":        "Bla Bla",
-		"Bla Bla corp.":       "Bla Bla",
-		"Bla Bla corporation": "Bla Bla",
-		"Apple incorporated":  "Apple",
-		"Apple enterprises":   "Apple",
-		"Apple company":       "Apple",
-		"The Bla Bla":         "Bla Bla",
-		"The  Bla  Bla ":      "Bla Bla",
-		" Bla   Bla   PLC.  ": "Bla Bla",
+		"Apple ltd.":                "Apple",
+		"Bla Bla Inc.":              "Bla Bla",
+		"Bla Bla PLC.":              "Bla Bla",
+		"Bla Bla corp.":             "Bla Bla",
+		"Bla Bla corporation":       "Bla Bla",
+		"Apple incorporated":        "Apple",
+		"Apple enterprises":         "Apple",
+		"Apple company":             "Apple",
+		"The Bla Bla":               "Bla Bla",
+		"The  Bla  Bla ":            "Bla Bla",
+		"The  Bla  Bla, something ": "Bla Bla",
+		" Bla   Bla   PLC.  ":       "Bla Bla",
 	}
 
 	eng := English{}
 
 	for testtext, finaltext := range tests {
 
-		if text := eng.SimplifyPhraseFromNews(testtext); text != finaltext {
+		if text := eng.SimplifyCompanyName(testtext); text != finaltext {
+			t.Fatalf("For text %s, got %s, expected %s.", testtext, text, finaltext)
+		}
+	}
+}
+
+func TestSimplifyCompanyNameExt(t *testing.T) {
+
+	tests := map[string]string{
+		"Apple LTD":          "Apple",
+		"Bla Bla PLC.":       "Bla Bla",
+		"Bla Bla AXYZ.":      "Bla Bla",
+		"Bla Bla CORPORATED": "Bla Bla",
+		"Bla Bla corp":       "Bla Bla corp",
+	}
+
+	eng := English{}
+
+	for testtext, finaltext := range tests {
+
+		if text := eng.SimplifyCompanyNameExt(testtext); text != finaltext {
 			t.Fatalf("For text %s, got %s, expected %s.", testtext, text, finaltext)
 		}
 	}

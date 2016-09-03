@@ -17,7 +17,8 @@ type LangClass interface {
 	IsWordModInPhrase(phrase, word string) bool
 	GetTypeOfWord(word string) (string, error)
 	GetTypeOfWordComplex(word string, prevword string, nextword string) (string, error)
-	SimplifyPhraseFromNews(phrase string) string
+	SimplifyCompanyName(phrase string) string
+	SimplifyCompanyNameExt(phrase string) string
 }
 
 type Language struct {
