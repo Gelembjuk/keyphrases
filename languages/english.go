@@ -372,3 +372,35 @@ func (lang *English) simplifyWord(word string) string {
 	}
 	return word
 }
+
+func (lang English) SimplifyPhraseFromNews(phrase string) string {
+	// if there is a comma then truncate everything after
+	if strings.Index(phrase, ",") > 1 {
+		phrase = phrase[0 : strings.Index(phrase, ",")-1]
+	}
+	replace := [][]string{
+		{"\\s+$", ""},
+		{"^\\s+", ""},
+		{" inc\\.?$", ""},
+		{" ltd\\.?$", ""},
+		{" plc\\.?$", ""},
+		{" corp\\.?$", ""},
+		{" corporation$", ""},
+		{" incorporated$", ""},
+		{" enterprises$", ""},
+		{" company$", ""},
+		{"^the ", ""},
+		{"   ", " "},
+		{"  ", " "},
+		{"\\s+$", ""},
+		{"^\\s+", ""},
+		{"s$", ""},
+	}
+
+	for _, template := range replace {
+		r := regexp.MustCompile("(?i)" + template[0])
+
+		phrase = r.ReplaceAllString(phrase, template[1])
+	}
+	return phrase
+}

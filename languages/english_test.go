@@ -86,3 +86,28 @@ func TestGetTypeOfWord(t *testing.T) {
 		}
 	}
 }
+func TestSimplifyPhraseFromNews(t *testing.T) {
+
+	tests := map[string]string{
+		"Apple ltd.":          "Apple",
+		"Bla Bla Inc.":        "Bla Bla",
+		"Bla Bla PLC.":        "Bla Bla",
+		"Bla Bla corp.":       "Bla Bla",
+		"Bla Bla corporation": "Bla Bla",
+		"Apple incorporated":  "Apple",
+		"Apple enterprises":   "Apple",
+		"Apple company":       "Apple",
+		"The Bla Bla":         "Bla Bla",
+		"The  Bla  Bla ":      "Bla Bla",
+		" Bla   Bla   PLC.  ": "Bla Bla",
+	}
+
+	eng := English{}
+
+	for testtext, finaltext := range tests {
+
+		if text := eng.SimplifyPhraseFromNews(testtext); text != finaltext {
+			t.Fatalf("For text %s, got %s, expected %s.", testtext, text, finaltext)
+		}
+	}
+}
