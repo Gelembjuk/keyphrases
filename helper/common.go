@@ -64,3 +64,40 @@ func UpperCaseFirstLetter(str string) string {
 	out[0] = unicode.ToUpper(out[0])
 	return string(out)
 }
+
+func GetFirstLetter(str string) string {
+	if len(str) < 1 {
+		return str
+	}
+
+	out := []rune(str)
+	return string(out[0])
+}
+
+func GetIndexOfMaxInSlice(slice []int) int {
+	max := 0
+	index := -1
+
+	for i, v := range slice {
+		if v > max {
+			index = i
+			max = v
+		}
+	}
+
+	return index
+}
+
+func AverageFloat32(arr []float32) float32 {
+	if len(arr) == 0 {
+		return 0
+	}
+
+	total := float32(0.0)
+
+	for _, v := range arr {
+		total += v
+	}
+
+	return total / float32(len(arr))
+}

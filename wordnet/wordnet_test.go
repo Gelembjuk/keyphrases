@@ -98,3 +98,27 @@ func TestGetWordSynonims(t *testing.T) {
 		}
 	}
 }
+
+func TestGetWordSentiment(t *testing.T) {
+
+	wordnet := WordNet{DictLocationDirectory: "dict/"}
+
+	tests := map[string]float32{
+		"dead":    -0.279762,
+		"happy":   0.500,
+		"problem": -0.041667,
+	}
+
+	for word, sent := range tests {
+
+		sentiment, err := wordnet.GetWordSentiment(word)
+
+		if err != nil {
+			t.Fatalf("WordNet Error %s.", err.Error())
+		}
+
+		if sentiment-sent > 0.0001 {
+			t.Fatalf("For word %s, got sentiment %f, expected %f.", word, sentiment, sent)
+		}
+	}
+}

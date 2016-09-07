@@ -75,3 +75,13 @@ func GetBiggestValueInMap(mymap map[string]int) int {
 
 	return value
 }
+
+func ReverseStringSlice(src []string) []string {
+	result := []string{}
+
+	for i := len(src) - 1; i >= 0; i-- {
+		result = append(result, src[i])
+	}
+
+	return result
+}

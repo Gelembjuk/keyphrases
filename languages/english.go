@@ -429,3 +429,10 @@ func (lang English) SimplifyCompanyNameExt(phrase string) string {
 	}
 	return phrase
 }
+
+func (lang English) GetSentimentOfWord(word string) (float32, error) {
+	if lang.wordnetstatus != 2 {
+		return 0, errors.New("Can not detect type of a word. WordNet dict not configured")
+	}
+	return lang.WordNet.GetWordSentiment(word)
+}

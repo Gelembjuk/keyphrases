@@ -19,6 +19,7 @@ type LangClass interface {
 	GetTypeOfWordComplex(word string, prevword string, nextword string) (string, error)
 	SimplifyCompanyName(phrase string) string
 	SimplifyCompanyNameExt(phrase string) string
+	GetSentimentOfWord(word string) (float32, error)
 }
 
 type Language struct {

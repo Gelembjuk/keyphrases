@@ -25,11 +25,15 @@ const verbData = "data.verb"
 const adjData = "data.adj"
 const advData = "data.adv"
 
+const sentimentsfile = "sentiments.txt"
+
 type WordNet struct {
 	DictLocationDirectory string
 	senseCache            map[string]string
+	sentimentsCache       map[string]float32
 	fileHandles           map[int]*os.File
 	dataFileHandles       map[int]*os.File
+	sentimentsFileHandle  *os.File
 }
 
 type indexRecord struct {
@@ -68,6 +72,9 @@ func (this *WordNet) init() error {
 	this.fileHandles = map[int]*os.File{}
 	this.dataFileHandles = map[int]*os.File{}
 	this.senseCache = map[string]string{}
+	this.sentimentsFileHandle = nil
+
+	this.sentimentsCache = map[string]float32{}
 
 	return nil
 }
@@ -182,6 +189,56 @@ func (this *WordNet) GetWordSynonims(word string) ([]string, error) {
 	return synonims, nil
 }
 
+func (this *WordNet) GetWordSentiment(word string) (float32, error) {
+	err := this.init()
+
+	if err != nil {
+		return 0, err
+	}
+
+	if sent, exists := this.sentimentsCache[word]; exists {
+		return sent, nil
+	}
+
+	// local structure to keep list of senses and references
+
+	wordreferences := []wordReference{}
+
+	// try 4 supported Pos to get list of offsets
+	for i := 1; i <= 4; i++ {
+		r, e := this.getRecordForWord(word, i)
+
+		if e != nil {
+			return 0, e
+		}
+
+		if r.Found {
+			for _, o := range r.Offsets {
+				ref := wordReference{Lemma: r.Lemma, Pos: r.Pos, PosNum: i, Offset: o}
+
+				wordreferences = append(wordreferences, ref)
+			}
+		}
+	}
+
+	sentiments := []float32{}
+
+	for _, ref := range wordreferences {
+		sentiment, err := this.sentimentLookup(ref)
+
+		if err == nil {
+			sentiments = append(sentiments, sentiment)
+		}
+	}
+
+	if len(sentiments) > 0 {
+		this.sentimentsCache[word] = helper.AverageFloat32(sentiments)
+		return this.sentimentsCache[word], nil
+	}
+	this.sentimentsCache[word] = 0
+	return 0, nil
+}
+
 func (this *WordNet) getRecordForWord(word string, source int) (indexRecord, error) {
 	result := indexRecord{}
 
@@ -247,7 +304,62 @@ func (this *WordNet) getRecordForWord(word string, source int) (indexRecord, err
 
 	return result, nil
 }
+func (this *WordNet) sentimentLookup(reference wordReference) (float32, error) {
+	fhandle, err := this.getSentimentsFileHandle()
 
+	if err != nil {
+		return 0, err
+	}
+
+	fhandle.Seek(0, 0)
+
+	linestart := reference.Pos + "\t" + reference.Offset + "\t"
+
+	// find a line in a file starting from this line
+	// find a string in a file starting with thos word
+	scanner := bufio.NewScanner(fhandle)
+
+	for scanner.Scan() {
+
+		line := scanner.Text()
+
+		if strings.Index(line, linestart) == 0 {
+			tokens := strings.SplitN(line, "\t", 5)
+
+			if len(tokens) < 4 {
+				return 0, errors.New("Unable to parse WordNet dict line")
+			}
+			fposscore, err1 := strconv.ParseFloat(tokens[2], 64)
+
+			if err1 != nil {
+				return 0, err1
+			}
+
+			fnegscore, err2 := strconv.ParseFloat(tokens[3], 64)
+
+			if err2 != nil {
+				return 0, err2
+			}
+
+			ret := fposscore
+
+			if ret < fnegscore {
+				ret = -fnegscore
+			}
+
+			//fmt.Printf("%s, %s, %f\n", line, reference.Lemma, ret)
+
+			return float32(ret), nil
+		}
+
+	}
+
+	if err = scanner.Err(); err != nil {
+		return 0, err
+	}
+
+	return 0, nil
+}
 func (this *WordNet) getWordReferencesSynonims(reference wordReference) ([]string, error) {
 	senses := []string{}
 
@@ -381,6 +493,40 @@ func (this *WordNet) getDataFileHandle(source int) (*os.File, error) {
 	this.dataFileHandles[source] = f
 
 	return this.dataFileHandles[source], nil
+}
+
+func (this *WordNet) getSentimentsFileHandle() (*os.File, error) {
+	if this.sentimentsFileHandle != nil {
+		return this.sentimentsFileHandle, nil
+	}
+	// open this file
+
+	filepath := this.DictLocationDirectory + sentimentsfile
+
+	f, err := os.Open(filepath)
+
+	if err != nil {
+		return nil, err
+	}
+
+	this.sentimentsFileHandle = f
+
+	return this.sentimentsFileHandle, nil
+}
+
+func (this WordNet) getNamedPos(pos string) string {
+	switch {
+	case pos == "1":
+		return "n"
+	case pos == "2":
+		return "v"
+	case pos == "3":
+		return "a"
+	case pos == "4":
+		return "r"
+	}
+
+	return ""
 }
 
 func (this *WordNet) Free() {
