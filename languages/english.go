@@ -429,10 +429,27 @@ func (lang English) SimplifyCompanyNameExt(phrase string) string {
 	}
 	return phrase
 }
+func (lang English) normaliseWord(word string) string {
 
+	word = strings.ToLower(word)
+
+	replace := [][]string{
+		{"s$", ""},
+	}
+
+	for _, template := range replace {
+		r := regexp.MustCompile(template[0])
+
+		word = r.ReplaceAllString(word, template[1])
+	}
+	return word
+}
 func (lang English) GetSentimentOfWord(word string) (float32, error) {
 	if lang.wordnetstatus != 2 {
 		return 0, errors.New("Can not detect type of a word. WordNet dict not configured")
 	}
+
+	word = lang.normaliseWord(word)
+
 	return lang.WordNet.GetWordSentiment(word)
 }
