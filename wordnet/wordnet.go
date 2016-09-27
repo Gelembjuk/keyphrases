@@ -66,7 +66,7 @@ func (this *WordNet) init() error {
 	indexpath := this.DictLocationDirectory + nounIndex
 
 	if _, err := os.Stat(indexpath); os.IsNotExist(err) {
-		return errors.New("WordNet directory is not set or not found")
+		return errors.New("WordNet directory is not set or not found: " + indexpath)
 	}
 
 	this.fileHandles = map[int]*os.File{}
@@ -83,7 +83,7 @@ func (this *WordNet) SetDictDirectory(path string) error {
 	indexpath := path + nounIndex
 
 	if _, err := os.Stat(indexpath); os.IsNotExist(err) {
-		return errors.New("WordNet directory is not set or not found")
+		return errors.New("WordNet directory is not set or not found: " + indexpath)
 	}
 
 	this.DictLocationDirectory = path

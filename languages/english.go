@@ -2,6 +2,7 @@ package languages
 
 import (
 	"errors"
+
 	"regexp"
 	"strings"
 
@@ -64,6 +65,7 @@ func (lang *English) SetOptions(options map[string]string) error {
 		err := lang.WordNet.SetDictDirectory(val)
 
 		if err != nil {
+
 			return err
 		}
 
@@ -382,20 +384,20 @@ func (lang English) SimplifyCompanyName(phrase string) string {
 	replace := [][]string{
 		{"\\s+$", ""},
 		{"^\\s+", ""},
-		{" inc\\.?$", ""},
-		{" ltd\\.?$", ""},
-		{" plc\\.?$", ""},
-		{" corp\\.?$", ""},
-		{" corporation$", ""},
-		{" incorporated$", ""},
-		{" international$", ""},
-		{" enterprises$", ""},
-		{" limited$", ""},
-		{" company$", ""},
-		{" & co\\..*?$", ""},
-		{" co\\.?\\s?$", ""},
-		{" & company.*?$", ""},
-		{"^the ", ""},
+		{"(?i)" + " inc\\.?$", ""},
+		{"(?i)" + " ltd\\.?$", ""},
+		{"(?i)" + " plc\\.?$", ""},
+		{"(?i)" + " corp\\.?$", ""},
+		{"(?i)" + " corporation$", ""},
+		{"(?i)" + " incorporated$", ""},
+		{"(?i)" + " international$", ""},
+		{"(?i)" + " enterprises$", ""},
+		{"(?i)" + " limited$", ""},
+		{"(?i)" + " company$", ""},
+		{"(?i)" + " & co\\..*?$", ""},
+		{"(?i)" + " co\\.?\\s?$", ""},
+		{"(?i)" + " & company.*?$", ""},
+		{"(?i)" + "^the ", ""},
 		{"   ", " "},
 		{"  ", " "},
 		{"\\s+$", ""},
@@ -404,7 +406,7 @@ func (lang English) SimplifyCompanyName(phrase string) string {
 	}
 
 	for _, template := range replace {
-		r := regexp.MustCompile("(?i)" + template[0])
+		r := regexp.MustCompile(template[0])
 
 		phrase = r.ReplaceAllString(phrase, template[1])
 	}

@@ -55,12 +55,13 @@ func TestCleanNewsMessage(t *testing.T) {
 func TestGetTypeOfWord(t *testing.T) {
 
 	tests := map[string]string{
-		"bet":    "a",
-		"car":    "r",
-		"Car":    "n",
-		"monday": "t",
-		"ten":    "v",
-		"100":    "v",
+		"bet":        "a",
+		"car":        "r",
+		"Car":        "n",
+		"monday":     "t",
+		"ten":        "v",
+		"100":        "v",
+		"Deplorable": "n",
 	}
 
 	eng := English{}
@@ -101,6 +102,7 @@ func TestSimplifyCompanyName(t *testing.T) {
 		"The  Bla  Bla ":            "Bla Bla",
 		"The  Bla  Bla, something ": "Bla Bla",
 		" Bla   Bla   PLC.  ":       "Bla Bla",
+		"NHS": "NHS",
 	}
 
 	eng := English{}
@@ -121,6 +123,7 @@ func TestSimplifyCompanyNameExt(t *testing.T) {
 		"Bla Bla AXYZ.":      "Bla Bla",
 		"Bla Bla CORPORATED": "Bla Bla",
 		"Bla Bla corp":       "Bla Bla corp",
+		"NHS":                "NHS",
 	}
 
 	eng := English{}
