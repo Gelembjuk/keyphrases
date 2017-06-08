@@ -8,6 +8,7 @@ import (
 
 	"github.com/gelembjuk/keyphrases/helper"
 	"github.com/gelembjuk/keyphrases/languages"
+	"github.com/gelembjuk/keyphrases/sentences"
 	"github.com/gelembjuk/keyphrases/words"
 )
 
@@ -15,6 +16,11 @@ type Phrase struct {
 	Phrase   string
 	Synonims []string
 	Count    int
+}
+
+type InPhrase struct {
+	Phrase   string
+	Synonims []string
 }
 
 var langobj languages.LangClass
@@ -82,6 +88,47 @@ func GetPhrasesShort(sentences []string, allwords map[string]int) ([]string, err
 	finalphrases := finalFilterPhrases(phrases, 12)
 
 	return finalphrases, nil
+}
+
+func GetPhrasesByPredefinedList(sentenceslist []string, inphrases []InPhrase) (PhrasesList, error) {
+	phraseslist := PhrasesList{}
+
+	sentenceslist, _ = sentences.NormaliseSentencesList(sentenceslist)
+
+	for _, phrase := range inphrases {
+		newphrase := Phrase{Phrase: phrase.Phrase, Synonims: []string{}, Count: 0}
+
+		list := []string{strings.ToLower(phrase.Phrase)}
+
+		for _, syn := range phrase.Synonims {
+			list = append(list, strings.ToLower(syn))
+		}
+
+		for _, sentence := range sentenceslist {
+			sentence = " " + sentence + " "
+			for _, ph := range list {
+				var c int
+				c, sentence = getCountOccurencesAndRemove(sentence, ph)
+
+				newphrase.Count += c
+			}
+		}
+
+		if newphrase.Count > 0 {
+			phraseslist = append(phraseslist, newphrase)
+		}
+	}
+
+	return phraseslist, nil
+}
+
+func getCountOccurencesAndRemove(sentence string, phrase string) (int, string) {
+
+	c := strings.Count(sentence, phrase)
+
+	sentence = strings.Replace(sentence, phrase, "", -1)
+
+	return c, sentence
 }
 
 func trimCommonWords(phrase string, mode int8) string {

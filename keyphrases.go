@@ -88,3 +88,27 @@ func (obj *TextPhrases) GetKeyWords(text string) []string {
 
 	return words
 }
+
+// returns inclusion of predefined key phrases from the text
+// predefined phrases is a hash array where each phrase has a list of sinonims
+func (obj *TextPhrases) GetKeyPhrasesFromList(text string, inphrases []phrases.InPhrase) PhrasesList {
+	obj.text = text
+
+	var sentenceslist []string
+
+	if obj.NewsSource {
+		sentenceslist, _ = sentences.SplitTextForSentencesFromNews(text)
+	} else {
+		sentenceslist, _ = sentences.SplitTextForSentences(text)
+	}
+
+	phraseslisttmp, _ := phrases.GetPhrasesByPredefinedList(sentenceslist, inphrases)
+
+	phraseslist := PhrasesList{}
+
+	for _, i := range phraseslisttmp {
+		phraseslist = append(phraseslist, i)
+	}
+
+	return phraseslist
+}

@@ -2,6 +2,7 @@ package sentences
 
 import (
 	"regexp"
+	"strings"
 
 	"github.com/gelembjuk/keyphrases/helper"
 	"github.com/gelembjuk/keyphrases/languages"
@@ -76,6 +77,29 @@ func SplitText(text string, news bool) ([]string, error) {
 	}
 
 	return sentenceslist, nil
+}
+
+func NormaliseSentencesList(sentenceslist []string) ([]string, error) {
+	normalsentences := []string{}
+
+	for _, sentence := range sentenceslist {
+		sentence, _ = langobj.StrongCleanAndNormaliseSentence(sentence)
+		sentence = strings.ToLower(sentence)
+
+		replace := [][]string{
+			{",", ""},
+		}
+
+		for _, template := range replace {
+			r := regexp.MustCompile(template[0])
+
+			sentence = r.ReplaceAllString(sentence, template[1])
+		}
+
+		normalsentences = append(normalsentences, sentence)
+	}
+
+	return normalsentences, nil
 }
 
 func cleanAndNormaliseSentence(sentence string) (string, error) {

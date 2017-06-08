@@ -147,6 +147,11 @@ func (lang *English) CleanAndNormaliseSentence(sentence string) (string, error) 
 	return sentence, nil
 }
 
+func (lang *English) StrongCleanAndNormaliseSentence(sentence string) (string, error) {
+
+	return sentence, nil
+}
+
 func (lang *English) IsWord(word string) bool {
 	if len(word) == 0 {
 		return false

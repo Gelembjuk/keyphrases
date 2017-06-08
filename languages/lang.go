@@ -9,6 +9,7 @@ type LangClass interface {
 	SetOptions(options map[string]string) error
 	CleanNewsMessage(text string) (string, string, error)
 	CleanAndNormaliseSentence(sentence string) (string, error)
+	StrongCleanAndNormaliseSentence(sentence string) (string, error)
 	IsWord(word string) bool
 	RemoveCommonWords(words map[string]int) bool
 	IsSimilarWord(word1 string, word2 string) int8
