@@ -50,6 +50,7 @@ Inflation remains far below the ECB’s 2 percent goal after more than two years
 		InPhrase{"Mario Draghi", []string{"Mario", "Draghi"}},
 		InPhrase{"Brexit", []string{}},
 		InPhrase{"Central Bank", []string{"Bank"}},
+		InPhrase{"Some unexistent text", []string{"Some aliace"}},
 	}
 
 	sentenceslist, _ := sentences.SplitTextForSentencesFromNews(text)
