@@ -21,6 +21,7 @@ type TextPhrases struct {
 
 type Phrase phrases.Phrase
 type PhrasesList phrases.PhrasesList
+type InPhrase phrases.InPhrase
 
 func (obj *TextPhrases) Init() error {
 	var err error
@@ -91,7 +92,7 @@ func (obj *TextPhrases) GetKeyWords(text string) []string {
 
 // returns inclusion of predefined key phrases from the text
 // predefined phrases is a hash array where each phrase has a list of sinonims
-func (obj *TextPhrases) GetKeyPhrasesFromList(text string, inphrases []phrases.InPhrase) PhrasesList {
+func (obj *TextPhrases) GetKeyPhrasesFromList(text string, inphrases []InPhrase) PhrasesList {
 	obj.text = text
 
 	var sentenceslist []string
@@ -101,8 +102,15 @@ func (obj *TextPhrases) GetKeyPhrasesFromList(text string, inphrases []phrases.I
 	} else {
 		sentenceslist, _ = sentences.SplitTextForSentences(text)
 	}
+	// convert to internal list
+	inphrasesconv := []phrases.InPhrase{}
 
-	phraseslisttmp, _ := phrases.GetPhrasesByPredefinedList(sentenceslist, inphrases)
+	for _, ph := range inphrases {
+		phconv := phrases.InPhrase{ph.Phrase, ph.Synonims}
+		inphrasesconv = append(inphrasesconv, phconv)
+	}
+
+	phraseslisttmp, _ := phrases.GetPhrasesByPredefinedList(sentenceslist, inphrasesconv)
 
 	phraseslist := PhrasesList{}
 
