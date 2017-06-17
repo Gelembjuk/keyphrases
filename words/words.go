@@ -22,10 +22,13 @@ func SplitSentencesForWords(sentences []string) (map[string]int, error) {
 
 	allwords := map[string]int{}
 
+	sort.Strings(sentences)
+
 	for _, sentence := range sentences {
 		words, _ := SplitSentenceForWords(sentence)
 
 		for _, word := range words {
+
 			if _, ok := allwords[word]; ok {
 				allwords[word]++
 			} else {
@@ -34,7 +37,6 @@ func SplitSentencesForWords(sentences []string) (map[string]int, error) {
 		}
 
 	}
-
 	langobj.RemoveCommonWords(allwords)
 
 	joinSimilarWords(allwords)
